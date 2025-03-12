@@ -1,10 +1,28 @@
+/* Hide all scrollbars globally */
+* {
+    -ms-overflow-style: none !important;  /* IE and Edge */
+    scrollbar-width: none !important;     /* Firefox */
+}
+
+*::-webkit-scrollbar {
+    display: none !important;  /* Chrome, Safari and Opera */
+}
+
+/* Remove any other scrollbar styling that might conflict */
+::-webkit-scrollbar,
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-thumb {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont,Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
     margin: 0;
     padding: 0;
     color: #11171C;
     background-color: #FFFFFF;
-    overflow-y: auto;
     font-size: 13px;
 
 }
@@ -264,7 +282,7 @@ body {
 .welcome-container {
     max-width: 800px;
     margin: 0 auto;
-    padding-top: 200px;
+    padding-top: 180px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -442,8 +460,13 @@ body {
     flex-direction: column;
     width: 100%;
     overflow-y: scroll;
-    scrollbar-width: thin;
+    scrollbar-width: none;
     scroll-behavior: smooth;
+    -ms-overflow-style: none;  /* IE and Edge */
+}
+
+.chat-messages::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
 }
 
 .message {
@@ -735,12 +758,16 @@ button:focus, .suggestion-button:focus {
     background: #5F7281;
 }
 
-html {
+html, body {
     overflow: auto;
-    scrollbar-width: thin;
-    scrollbar-color: #C0CDD8 #F5F5F5;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+    display: none;
+}
 
 .send-button {
     background-image: url("send_icon.svg");
@@ -917,4 +944,22 @@ input:disabled, button:disabled {
 /* Hover effect for the export button */
 .export:hover {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* OR Option 2: Make the scrollbar more subtle */
+.chat-messages::-webkit-scrollbar {
+    width: 4px;  /* Make it thinner */
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: transparent;  /* Make track invisible */
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #E0E0E0;  /* Lighter gray color */
+    border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #C0C0C0;
 } 
