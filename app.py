@@ -74,7 +74,7 @@ app.layout = html.Div([
                         ], id="suggestion-1", className="suggestion-button"),
                         html.Button([
                             html.Div(className="suggestion-icon"),
-                            html.Span("What is the trend of my sales for the last 3 months?")
+                            html.Span("Which distribution center has the highest chance of being a bottleneck?")
                         ], id="suggestion-2", className="suggestion-button"),
                         html.Button([
                             html.Div(className="suggestion-icon"),
