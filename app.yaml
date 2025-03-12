@@ -1,0 +1,11 @@
+command:
+- "python"
+- "app.py"
+
+env:
+- name: "SPACE_ID"
+  valueFrom: "space_id"
+- name: "DATABRICKS_HOST"
+  valueFrom: "databricks_host"
+- name: "DATABRICKS_TOKEN"
+  valueFrom: "databricks_token"
