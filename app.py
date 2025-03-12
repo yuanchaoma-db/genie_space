@@ -165,7 +165,7 @@ def handle_all_inputs(n_clicks, n_submit, s1, s2, s3, s4, input_value, current_m
     # Handle suggestion buttons
     suggestion_messages = {
         "suggestion-1": "What tables are there and how are they connected? Give me a short summary.",
-        "suggestion-2": "What is the trend of my sales for the last 3 months?",
+        "suggestion-2": "Which distribution center has the highest chance of being a bottleneck?",
         "suggestion-3": "Explain the dataset",
         "suggestion-4": "What was the demand for our products by week in 2024?"
     }
