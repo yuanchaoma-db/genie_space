@@ -4,10 +4,6 @@ import dash_bootstrap_components as dbc
 import json
 from genie_room import genie_query
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-from io import StringIO
-import pdb
 
 app = dash.Dash(
     __name__, 

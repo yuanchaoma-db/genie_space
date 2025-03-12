@@ -1,7 +1,24 @@
 # Databricks Genie API Integration Demo
 
-![Genie Conversation Chatbot Interface](./assets/genie_room0.png)
-![Genie Conversation Chatbot Interface](./assets/genie_room1.png)
+<div style="border-radius: 10px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 800px; margin: 20px 0;">
+  <div style="background: #f0f0f0; height: 25px; display: flex; align-items: center; padding: 0 10px; border-bottom: 1px solid #e0e0e0;">
+    <div style="background-color: #ff5f57; border-radius: 50%; width: 12px; height: 12px; margin-right: 6px;"></div>
+    <div style="background-color: #ffbd2e; border-radius: 50%; width: 12px; height: 12px; margin-right: 6px;"></div>
+    <div style="background-color: #28c840; border-radius: 50%; width: 12px; height: 12px;"></div>
+    <div style="margin: 0 auto; font-size: 12px; color: #555;">Genie Conversation Interface</div>
+  </div>
+  <img src="./assets/genie_room0.png" alt="Genie Conversation Chatbot Interface" style="width: 100%; display: block;">
+</div>
+
+<div style="border-radius: 10px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 800px; margin: 20px 0;">
+  <div style="background: #f0f0f0; height: 25px; display: flex; align-items: center; padding: 0 10px; border-bottom: 1px solid #e0e0e0;">
+    <div style="background-color: #ff5f57; border-radius: 50%; width: 12px; height: 12px; margin-right: 6px;"></div>
+    <div style="background-color: #ffbd2e; border-radius: 50%; width: 12px; height: 12px; margin-right: 6px;"></div>
+    <div style="background-color: #28c840; border-radius: 50%; width: 12px; height: 12px;"></div>
+    <div style="margin: 0 auto; font-size: 12px; color: #555;">Genie Data Analysis</div>
+  </div>
+  <img src="./assets/genie_room1.png" alt="Genie Conversation Chatbot Interface" style="width: 100%; display: block;">
+</div>
 
 This repository demonstrates how to integrate Databricks' AI/BI Genie Conversation APIs into custom Databricks Apps applications, allowing users to interact with their structured data using natural language.
 
@@ -25,7 +42,7 @@ The Databricks Genie Conversation APIs (in Public Preview) enable you to embed A
 ## Example Use Case
 
 This demo shows how to create a simple interface that connects to the Genie API, allowing users to:
-1. Start a conversation with a question about their supply chain data
+1. Start a conversation with a question about their domain data
 2. View generated SQL and results
 3. Ask follow-up questions that maintain context
 
