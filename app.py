@@ -263,16 +263,14 @@ def get_model_response(trigger_data, current_messages, chat_history):
             content = dcc.Markdown(response, className="message-text")
         else:
             # Data table response
-            df = pd.DataFrame(response)
-            
             # Store the dataframe as JSON in a hidden div
             table_id = f"table-{len(chat_history)}"
             
             # Create the table with adjusted styles
             data_table = dash_table.DataTable(
                 id=table_id,
-                data=df.to_dict('records'),
-                columns=[{"name": i, "id": i} for i in df.columns],
+                data=response.to_dict('records'),
+                columns=[{"name": i, "id": i} for i in response.columns],
                 
                 # Export configuration
                 export_format="csv",
