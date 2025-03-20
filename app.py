@@ -4,6 +4,7 @@ import dash_bootstrap_components as dbc
 import json
 from genie_room import genie_query
 import pandas as pd
+import sqlparse
 
 app = dash.Dash(
     __name__, 
@@ -132,6 +133,21 @@ app.layout = html.Div([
 # Store chat history
 chat_history = []
 
+# Add this function at the beginning of your app.py file, right after the imports
+
+def format_sql_query(sql_query):
+    """Format SQL query using sqlparse library"""
+    formatted_sql = sqlparse.format(
+        sql_query,
+        keyword_case='upper',  # Makes keywords uppercase
+        identifier_case=None,  # Preserves identifier case
+        reindent=True,         # Adds proper indentation
+        indent_width=2,        # Indentation width
+        strip_comments=False,  # Preserves comments
+        comma_first=False      # Commas at the end of line, not beginning
+    )
+    return formatted_sql
+
 # First callback: Handle inputs and show thinking indicator
 @app.callback(
     [Output("chat-messages", "children"),
@@ -256,7 +272,7 @@ def get_model_response(trigger_data, current_messages, chat_history):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
     
     try:
-        response = genie_query(user_input)
+        response, query_text = genie_query(user_input)
         
         if isinstance(response, str):
             response = response.replace("`", "")
@@ -307,12 +323,36 @@ def get_model_response(trigger_data, current_messages, chat_history):
                 page_action='native'
             )
             
+            # Create a container for the toggle and query
+            if query_text is not None:
+                # Use the new formatting function
+                formatted_sql = format_sql_query(query_text)
+                
+                query_section = html.Div([
+                    html.Div([
+                        html.Button([
+                            html.Span("Show code", id={"type": "toggle-text", "index": len(chat_history)})
+                        ], 
+                        id={"type": "toggle-query", "index": len(chat_history)}, 
+                        className="toggle-query-button",
+                        n_clicks=0)
+                    ], className="toggle-query-container"),
+                    html.Div([
+                        html.Pre([
+                            html.Code(formatted_sql, className="sql-code")
+                        ], className="sql-pre")
+                    ], 
+                    id={"type": "query-code", "index": len(chat_history)}, 
+                    className="query-code-container hidden")
+                ], id={"type": "query-section", "index": len(chat_history)}, className="query-section")
+            
             # Use the built-in export functionality of DataTable
             content = html.Div([
                 html.Div([data_table], style={
                     'marginBottom': '20px',
                     'paddingRight': '5px'
                 }),
+                query_section,
                 html.Div("Click the export button in the table header to download as CSV", 
                          style={"fontSize": "12px", "color": "#666", "marginTop": "-15px", "marginBottom": "10px"})
             ])
@@ -437,19 +477,29 @@ def show_chat_history(n_clicks, chat_history, current_chat_list):
         )
     return chat_data["messages"], "welcome-container hidden", updated_chat_list
 
-# Modify the clientside callback to target the chat-container
+# Improve the clientside callback to handle both new messages and SQL code toggling
 app.clientside_callback(
     """
-    function(children) {
+    function(children, n_clicks) {
+        // Scroll chat messages to bottom
         var chatMessages = document.getElementById('chat-messages');
         if (chatMessages) {
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
+        
+        // This will run a bit after the SQL code is shown/hidden
+        setTimeout(function() {
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }, 100);
+        
         return '';
     }
     """,
     Output('dummy-output', 'children'),
-    Input('chat-messages', 'children'),
+    [Input('chat-messages', 'children'),
+     Input({"type": "toggle-query", "index": ALL}, "n_clicks")],
     prevent_initial_call=True
 )
 
@@ -535,6 +585,30 @@ def handle_feedback(up_clicks, down_clicks, up_class, down_class):
         new_down_class = "thumbs-down-button active" if "active" not in down_class else "thumbs-down-button"
     
     return new_up_class, new_down_class
+
+# Replace the clientside callback with a regular callback for toggling SQL display
+@app.callback(
+    [Output({"type": "toggle-text", "index": MATCH}, "children"),
+     Output({"type": "query-code", "index": MATCH}, "className"),
+     Output({"type": "toggle-query", "index": MATCH}, "className")],
+    [Input({"type": "toggle-query", "index": MATCH}, "n_clicks")],
+    [State({"type": "query-code", "index": MATCH}, "className"),
+     State({"type": "toggle-query", "index": MATCH}, "className")],
+    prevent_initial_call=True
+)
+def toggle_sql_code(n_clicks, current_code_class, current_button_class):
+    if n_clicks is None:
+        return dash.no_update, dash.no_update, dash.no_update
+    
+    # Check if the code is currently hidden
+    is_hidden = "hidden" in current_code_class
+    
+    if is_hidden:
+        # Show the code
+        return "Hide code", "query-code-container", "toggle-query-button active"
+    else:
+        # Hide the code
+        return "Show code", "query-code-container hidden", "toggle-query-button"
 
 # Run the app
 if __name__ == "__main__":

@@ -223,11 +223,13 @@ def genie_query(question: str) -> Union[str, pd.DataFrame]:
         
         # If there's text content in the attachment, return it
         if "text" in attachment and "content" in attachment["text"]:
-            return attachment["text"]["content"]
+            return attachment["text"]["content"], None
         
         # If there's a query, get the result
         elif "query" in attachment:
+            query_text = attachment.get("query", {}).get("query", "")
             query_result = client.get_query_result(conversation_id, message_id, attachment_id)
+           
             data_array = query_result.get('data_array', [])
             schema = query_result.get('schema', {})
             columns = [col.get('name') for col in schema.get('columns', [])]
@@ -239,11 +241,11 @@ def genie_query(question: str) -> Union[str, pd.DataFrame]:
                     columns = [f"column_{i}" for i in range(len(data_array[0]))]
                 
                 df = pd.DataFrame(data_array, columns=columns)
-                return df
+                return df, query_text
     
     # If no attachments or no data in attachments, return text content
     if 'content' in complete_message:
-        return complete_message.get('content', '')
+        return complete_message.get('content', ''), None
     
-    return "No response available"
+    return "No response available", None
 

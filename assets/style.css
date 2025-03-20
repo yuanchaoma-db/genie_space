@@ -962,4 +962,105 @@ input:disabled, button:disabled {
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
     background: #C0C0C0;
+}
+
+/* Add these styles to your CSS */
+.toggle-query-button {
+    background-color: #f0f0f0;
+    border: none;
+    border-radius: 2px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-bottom: 5px;
+    transition: all 0.2s ease;
+}
+.toggle-query-button:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+
+.query-code-container {
+    border-radius: 4px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+    max-height: 500px;
+    overflow-y: auto;
+    width: 100%;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+    border: 1px solid #e0e0e0;
+}
+
+.query-code-container.hidden {
+    display: none;
+}
+
+.query-code-container pre {
+    margin: 0;
+    padding: 0;
+    background-color: transparent;
+}
+
+.query-code-container code {
+    display: inline;
+    padding: 0;
+    background-color: transparent;
+}
+
+.sql-code-area {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin: 0 10px 20px 0px;
+}
+
+
+.toggle-query-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 5px;
+}
+
+/* SQL code styling */
+pre {
+    margin: 0;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+pre code.language-sql {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+    font-size: 12px;
+    color: #d4d4d4;
+    display: block;
+    padding: 10px;
+    line-height: 1.5;
+    white-space: pre;
+}
+
+.sql-pre {
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    width: 100%;
+    overflow-x: auto;
+}
+
+.sql-code {
+    display: block;
+    padding: 5em;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre;
+}
+
+.query-code-container {
+    max-height: 500px;
+    overflow: auto;
+    transition: max-height 0.3s ease;
+    border: 1px solid #eaecef;
+    border-radius: 4px;
+    margin-bottom: 16px;
 } 
