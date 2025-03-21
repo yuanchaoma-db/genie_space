@@ -7,3 +7,4 @@ dash-leaflet==1.0.15
 dash-table==5.0.0
 dash_ag_grid==31.3.0
 dash_mantine_components==0.15.3
+backoff==2.2.1
