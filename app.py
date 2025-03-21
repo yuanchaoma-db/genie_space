@@ -5,6 +5,7 @@ import json
 from genie_room import genie_query
 import pandas as pd
 import sqlparse
+import uuid
 
 app = dash.Dash(
     __name__, 
@@ -167,11 +168,12 @@ def format_sql_query(sql_query):
      State("chat-messages", "children"),
      State("welcome-container", "className"),
      State("chat-list", "children"),
-     State("chat-history-store", "data")],
+     State("chat-history-store", "data"),
+     State("chat-trigger", "data")],
     prevent_initial_call=True
 )
 def handle_all_inputs(n_clicks, n_submit, s1, s2, s3, s4, input_value, current_messages, 
-                     welcome_class, current_chat_list, chat_history):
+                     welcome_class, current_chat_list, chat_history, trigger_data):
     ctx = callback_context
     if not ctx.triggered:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
@@ -222,37 +224,89 @@ def handle_all_inputs(n_clicks, n_submit, s1, s2, s3, s4, input_value, current_m
     
     updated_messages.append(thinking_indicator)
     
-    # Add new query to the sidebar chat list with active class
-    new_chat_item = html.Div(user_input, 
-                            className="chat-item active", 
-                            id={"type": "chat-item", "index": 0})
+    # CRITICAL CHANGE: Check if we're in new chat mode (after clicking New Chat)
+    is_new_chat = trigger_data.get("new_chat_active", False)
     
-    # Update existing items to remove active class and update indices
-    updated_chat_list = [new_chat_item] + [
-        html.Div(
-            item["props"]["children"],
-            className="chat-item",
-            id={"type": "chat-item", "index": i + 1}
-        )
-        for i, item in enumerate(current_chat_list)
-    ]
-    
-    # Update chat history
-    if chat_history is None:
-        chat_history = []
+    # Always create a new session if we're in new chat mode
+    if is_new_chat:
+        # Create a new session ID regardless of existing sessions
+        current_session_id = str(uuid.uuid4())
         
-    new_chat_history = [{
-            "query": user_input,
-            "messages": updated_messages 
-        }] + chat_history
+        # Create new session entry
+        new_session = {
+            "session_id": current_session_id,
+            "first_query": user_input,
+            "queries": [user_input],
+            "messages": updated_messages
+        }
+        
+        # Add the new session to the top of the chat history
+        chat_history = [new_session] + chat_history
+    else:
+        # Normal behavior (not new chat mode)
+        # Determine if we're adding to an existing chat session or creating a new one
+        current_session_id = None
+        if chat_history and len(chat_history) > 0:
+            # Check if we're in an active session
+            current_session_id = chat_history[0].get("session_id")
+        
+        # If no current session, create a new one
+        if current_session_id is None:
+            current_session_id = str(uuid.uuid4())
+        
+        # Update chat history
+        if chat_history is None:
+            chat_history = []
+        
+        # Find if we already have a chat entry for this session
+        session_entry = None
+        for entry in chat_history:
+            if entry.get("session_id") == current_session_id:
+                session_entry = entry
+                break
+        
+        if session_entry:
+            # Update existing session
+            session_entry["messages"] = updated_messages
+            session_entry["queries"].append(user_input)
+            # Move this session to the top
+            chat_history.remove(session_entry)
+            chat_history = [session_entry] + chat_history
+        else:
+            # Create new session entry
+            new_session = {
+                "session_id": current_session_id,
+                "first_query": user_input,
+                "queries": [user_input],
+                "messages": updated_messages
+            }
+            chat_history = [new_session] + chat_history
+    
+    # Update sidebar chat list - always mark the newest session as active
+    updated_chat_list = []
+    for i, session in enumerate(chat_history):
+        class_name = "chat-item active" if i == 0 else "chat-item"
+        updated_chat_list.append(
+            html.Div(
+                session["first_query"],
+                className=class_name,
+                id={"type": "chat-item", "index": i}
+            )
+        )
     
     # Set the trigger data with new message
-    trigger_data = {"trigger": True, "message": user_input}
+    trigger_data = {
+        "trigger": True, 
+        "message": user_input, 
+        "session_id": current_session_id,
+        "new_chat_transition": False,
+        "new_chat_active": False  # Reset the new chat flag
+    }
+    
     return (updated_messages, "", "welcome-container hidden", 
-            trigger_data, True, updated_chat_list, new_chat_history)
+            trigger_data, True, updated_chat_list, chat_history)
 
 
-# Second callback: Make API call and show response
 @app.callback(
     [Output("chat-messages", "children", allow_duplicate=True),
      Output("chat-history-store", "data", allow_duplicate=True),
@@ -268,7 +322,9 @@ def get_model_response(trigger_data, current_messages, chat_history):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
     
     user_input = trigger_data.get("message", "")
-    if not user_input:
+    session_id = trigger_data.get("session_id", "")
+    
+    if not user_input or not session_id:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
     
     try:
@@ -322,18 +378,18 @@ def get_model_response(trigger_data, current_messages, chat_history):
                 page_current=0,
                 page_action='native'
             )
-            
+            formatted_sql = format_sql_query(query_text)
             # Create a container for the toggle and query
             if query_text is not None:
-                # Use the new formatting function
-                formatted_sql = format_sql_query(query_text)
+                # Generate a unique index for this query
+                query_index = f"{len(chat_history)}-{len(current_messages)}"  # This ensures uniqueness
                 
                 query_section = html.Div([
                     html.Div([
                         html.Button([
-                            html.Span("Show code", id={"type": "toggle-text", "index": len(chat_history)})
+                            html.Span("Show code", id={"type": "toggle-text", "index": query_index})
                         ], 
-                        id={"type": "toggle-query", "index": len(chat_history)}, 
+                        id={"type": "toggle-query", "index": query_index}, 
                         className="toggle-query-button",
                         n_clicks=0)
                     ], className="toggle-query-container"),
@@ -342,9 +398,9 @@ def get_model_response(trigger_data, current_messages, chat_history):
                             html.Code(formatted_sql, className="sql-code")
                         ], className="sql-pre")
                     ], 
-                    id={"type": "query-code", "index": len(chat_history)}, 
+                    id={"type": "query-code", "index": query_index}, 
                     className="query-code-container hidden")
-                ], id={"type": "query-section", "index": len(chat_history)}, className="query-section")
+                ], id={"type": "query-section", "index": query_index}, className="query-section")
             
             # Use the built-in export functionality of DataTable
             content = html.Div([
@@ -382,9 +438,12 @@ def get_model_response(trigger_data, current_messages, chat_history):
         ], className="bot-message message")
         
         # Update chat history with both user message and bot response
-        if chat_history and len(chat_history) > 0:
-            chat_history[0]["messages"] = current_messages[:-1] + [bot_response]  
-        return current_messages[:-1] + [bot_response], chat_history, {"trigger": False, "message": ""}, False
+        for i, session in enumerate(chat_history):
+            if session.get("session_id") == session_id:
+                chat_history[i]["messages"] = current_messages[:-1] + [bot_response]
+                break
+                
+        return current_messages[:-1] + [bot_response], chat_history, {"trigger": False, "message": "", "session_id": ""}, False
         
     except Exception as e:
         error_msg = f"Sorry, I encountered an error: {str(e)}"
@@ -399,11 +458,12 @@ def get_model_response(trigger_data, current_messages, chat_history):
         ], className="bot-message message")
         
         # Update chat history with both user message and error response
-        if chat_history and len(chat_history) > 0:
-            chat_history[0]["messages"] = current_messages[:-1] + [error_response]
+        for i, session in enumerate(chat_history):
+            if session.get("session_id") == session_id:
+                chat_history[i]["messages"] = current_messages[:-1] + [error_response]
+                break
         
-        return current_messages[:-1] + [error_response], chat_history, {"trigger": False, "message": ""}, False
-
+        return current_messages[:-1] + [error_response], chat_history, {"trigger": False, "message": "", "session_id": ""}, False
 # Toggle sidebar and speech button
 @app.callback(
     [Output("sidebar", "className"),
@@ -433,36 +493,33 @@ def toggle_sidebar(n_clicks, current_sidebar_class, current_left_component_class
 @app.callback(
     [Output("chat-messages", "children", allow_duplicate=True),
      Output("welcome-container", "className", allow_duplicate=True),
-     Output("chat-list", "children", allow_duplicate=True)],
+     Output("chat-list", "children", allow_duplicate=True),
+     Output("chat-trigger", "data", allow_duplicate=True)],
     [Input({"type": "chat-item", "index": ALL}, "n_clicks")],
     [State("chat-history-store", "data"),
-     State("chat-list", "children")],
+     State("chat-list", "children"),
+     State("chat-trigger", "data")],
     prevent_initial_call=True
 )
-def show_chat_history(n_clicks, chat_history, current_chat_list):
+def show_chat_history(n_clicks, chat_history, current_chat_list, trigger_data):
     ctx = dash.callback_context
     if not ctx.triggered:
-        return dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    
+    # CRITICAL: Skip this callback if we're in a new chat state
+    if trigger_data.get("new_chat_active", False):
+        # Return the trigger data with new_chat_active still set to True
+        return dash.no_update, dash.no_update, dash.no_update, trigger_data
     
     # Get the clicked item index
     triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
     clicked_index = json.loads(triggered_id)["index"]
     
     if not chat_history or clicked_index >= len(chat_history):
-        return dash.no_update, dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update
     
-    # Find the clicked query in chat history
-    clicked_query = current_chat_list[clicked_index]["props"]["children"]
-    chat_data = None
-    
-    # Find matching history item by query text
-    for item in chat_history:
-        if item["query"] == clicked_query:
-            chat_data = item
-            break
-    
-    if not chat_data:
-        return dash.no_update, dash.no_update, dash.no_update
+    # Get the session data for this chat
+    session_data = chat_history[clicked_index]
     
     # Update active state in chat list
     updated_chat_list = []
@@ -475,7 +532,12 @@ def show_chat_history(n_clicks, chat_history, current_chat_list):
                 id={"type": "chat-item", "index": i}
             )
         )
-    return chat_data["messages"], "welcome-container hidden", updated_chat_list
+    
+    # Clear new_chat_active flag in trigger data to allow normal operation again
+    updated_trigger_data = trigger_data.copy()
+    updated_trigger_data["new_chat_active"] = False
+    
+    return session_data["messages"], "welcome-container hidden", updated_chat_list, updated_trigger_data
 
 # Improve the clientside callback to handle both new messages and SQL code toggling
 app.clientside_callback(
@@ -503,13 +565,14 @@ app.clientside_callback(
     prevent_initial_call=True
 )
 
-# Modify the new chat button callback to maintain the sidebar chat list
+# Modify the new chat button callback to create a new session and prevent race conditions
 @app.callback(
     [Output("welcome-container", "className", allow_duplicate=True),
      Output("chat-messages", "children", allow_duplicate=True),
      Output("chat-trigger", "data", allow_duplicate=True),
      Output("query-running-store", "data", allow_duplicate=True),
-     Output("chat-history-store", "data", allow_duplicate=True)],
+     Output("chat-history-store", "data", allow_duplicate=True),
+     Output("chat-list", "children", allow_duplicate=True)],
     [Input("new-chat-button", "n_clicks"),
      Input("sidebar-new-chat-button", "n_clicks")],
     [State("chat-messages", "children"),
@@ -520,24 +583,39 @@ app.clientside_callback(
     prevent_initial_call=True
 )
 def reset_to_welcome(n_clicks1, n_clicks2, chat_messages, chat_trigger, chat_history_store, chat_list, query_running):
-    # Reset the chat window but keep sidebar intact
+    # Handle pending query
     if query_running and chat_trigger.get("trigger") and chat_history_store:
-        # check if the last message is a thinking indicator
-        chat_history_store[0]["messages"] = chat_history_store[0]["messages"][:-1]
-    return "welcome-container visible", [], {"trigger": False, "message": ""}, False, chat_history_store
+        # If a query is running, remove the thinking indicator
+        session_id = chat_trigger.get("session_id", "")
+        for i, session in enumerate(chat_history_store):
+            if session.get("session_id") == session_id:
+                chat_history_store[i]["messages"] = chat_history_store[i]["messages"][:-1]
+                break
     
+    # CRITICAL CHANGE: Create empty chat list entries with no active class
+    updated_chat_list = []
+    for i, item in enumerate(chat_list):
+        updated_chat_list.append(
+            html.Div(
+                item["props"]["children"],
+                className="chat-item",  # Remove active class from all items
+                id={"type": "chat-item", "index": i}
+            )
+        )
+    
+    # Set flags to indicate we're in a new chat transition
+    new_trigger_data = {
+        "trigger": False, 
+        "message": "", 
+        "session_id": "", 
+        "new_chat_transition": True,
+        "new_chat_active": True  # Add this flag to prevent other callbacks from interfering
+    }
+    
+    # Show welcome screen, clear chat messages
+    return "welcome-container visible", [], new_trigger_data, False, chat_history_store, updated_chat_list
 
-@app.callback(
-    [Output("welcome-container", "className", allow_duplicate=True)],
-    [Input("chat-messages", "children")],
-    prevent_initial_call=True
-)
-def reset_query_running(chat_messages):
-    # Return as a single-item list
-    if chat_messages:
-        return ["welcome-container hidden"]
-    else:
-        return ["welcome-container visible"]
+
 
 # Add callback to disable input while query is running
 @app.callback(

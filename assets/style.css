@@ -1039,21 +1039,21 @@ pre code.language-sql {
 }
 
 .sql-pre {
-    margin: 0;
-    padding: 0;
     background-color: #f5f5f5;
     border-radius: 4px;
     width: 100%;
     overflow-x: auto;
+    margin-bottom: 16px;
 }
 
 .sql-code {
     display: block;
-    padding: 5em;
+    border: none;
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
     font-size: 12px;
     line-height: 1.5;
     white-space: pre;
+    margin-bottom: 16px;
 }
 
 .query-code-container {
