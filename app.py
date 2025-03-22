@@ -126,8 +126,11 @@ app.layout = html.Div([
     
     # Add these new components
     html.Div(id='dummy-output'),
+    html.Div(id='dummy-output-disable', style={'display': 'none'}),
     dcc.Store(id="chat-trigger", data={"trigger": False, "message": "", "session_id": "", "new_chat_active": True}),
     dcc.Store(id="chat-history-store", data=[]),
+    dcc.Store(id="request-cache", data={}),
+    dcc.Interval(id='thinking-checker', interval=3000, n_intervals=0),  # Check every 3 seconds
 ])
 
 # Store chat history
@@ -147,6 +150,8 @@ def format_sql_query(sql_query):
         comma_first=False      # Commas at the end of line, not beginning
     )
     return formatted_sql
+
+# Add at the top level of your file
 
 # First callback: Handle inputs and show thinking indicator
 @app.callback(
@@ -169,8 +174,7 @@ def format_sql_query(sql_query):
      State("chat-history-store", "data"),
      State("chat-trigger", "data")],
     prevent_initial_call=True,
-    # Add debounce parameter (works in newer Dash versions)
-    interval=1000  # 1000ms = 1 second debounce
+    throttle=1000  # Throttle to one trigger per second
 )
 def handle_all_inputs(n_clicks, n_submit, s1, s2, s3, s4, input_value, current_messages, 
                      welcome_class, current_chat_list, chat_history, trigger_data):
@@ -312,23 +316,30 @@ def handle_all_inputs(n_clicks, n_submit, s1, s2, s3, s4, input_value, current_m
     [State("chat-messages", "children"),
      State("chat-history-store", "data")],
     prevent_initial_call=True,
-    interval=1000  
+    throttle=1000 
 )
 def get_model_response(trigger_data, current_messages, chat_history):
+    # Add this print statement to debug
+    print(f"Model response callback triggered with: {trigger_data}")
+    
     if not trigger_data or not trigger_data.get("trigger"):
         return dash.no_update, dash.no_update, dash.no_update
     
-    user_input = trigger_data.get("message", "")
-    session_id = trigger_data.get("session_id", "")
-    
-    if not user_input or not session_id:
-        return dash.no_update, dash.no_update, dash.no_update
-    
+    # Use a lock to prevent concurrent executions
+        
     try:
+        user_input = trigger_data.get("message", "")
+        session_id = trigger_data.get("session_id", "")
+        
+        if not user_input or not session_id:
+            return dash.no_update, dash.no_update, dash.no_update
+        
         # Pass the session_id to genie_query to maintain conversation context
         response, query_text = genie_query(user_input, session_id)
-        print("response", response)
-        
+            
+        if isinstance(response, str) and "Your request is already being processed" in response:
+            
+            return dash.no_update, dash.no_update, dash.no_update
         
         if isinstance(response, str):
             response = response.replace("`", "")
@@ -482,7 +493,6 @@ def get_model_response(trigger_data, current_messages, chat_history):
         
         # Reset the trigger data
         reset_trigger_data = {"trigger": False, "message": "", "session_id": session_id, "new_chat_active": False}
-                
         return display_messages, chat_history, reset_trigger_data
         
     except Exception as e:
@@ -514,7 +524,8 @@ def get_model_response(trigger_data, current_messages, chat_history):
             display_messages = current_messages[:-1] + [error_response]
         
         return display_messages, chat_history, {"trigger": False, "message": "", "session_id": session_id, "new_chat_active": False}
-
+    
+    
 # Toggle sidebar and speech button
 @app.callback(
     [Output("sidebar", "className"),
@@ -556,8 +567,6 @@ def show_chat_history(n_clicks, chat_history, current_chat_list, trigger_data):
     ctx = dash.callback_context
     if not ctx.triggered:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
-    
-    # CRITICAL: Skip this callback if we're in a new chat state
     if trigger_data.get("new_chat_active", False):
         # Return the trigger data with new_chat_active still set to True
         return dash.no_update, dash.no_update, dash.no_update, trigger_data
@@ -742,6 +751,40 @@ def toggle_sql_code(n_clicks, current_code_class, current_button_class):
     else:
         # Hide the code
         return "Show code", "query-code-container hidden", "toggle-query-button"
+
+# Add this callback to force refresh when thinking indicator gets stuck
+@app.callback(
+    Output("chat-messages", "children", allow_duplicate=True),
+    [Input("thinking-checker", "n_intervals")],
+    [State("chat-messages", "children"),
+     State("chat-history-store", "data")],
+    prevent_initial_call=True
+)
+def refresh_thinking_indicator(n_intervals, current_messages, chat_history):
+    """Check if thinking indicator is stuck and refresh the UI if needed"""
+    
+    # Skip if no messages
+    if not current_messages or not chat_history or len(chat_history) == 0:
+        return dash.no_update
+    
+    # Check if the last message is a thinking indicator
+    has_thinking = False
+    if current_messages and "thinking-indicator" in str(current_messages[-1]):
+        has_thinking = True
+    else:
+        # No thinking indicator, no need to update
+        return dash.no_update
+    
+    # Check if the active session (at index 0) has a response but UI still shows thinking
+    active_session = chat_history[0]
+    active_messages = active_session.get("messages", [])
+    
+    # If active session doesn't have thinking indicator but UI does, force refresh
+    if active_messages and "thinking-indicator" not in str(active_messages[-1]):
+        print("FORCE REFRESHING: Thinking indicator stuck, updating UI with latest messages")
+        return active_messages
+    
+    return dash.no_update
 
 # Run the app
 if __name__ == "__main__":
