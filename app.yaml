@@ -4,8 +4,8 @@ command:
 
 env:
 - name: "SPACE_ID"
-  valueFrom: "space_id"
+  value: "space_id"
 - name: "DATABRICKS_HOST"
-  valueFrom: "databricks_host"
+  value: "databricks_host"
 - name: "DATABRICKS_TOKEN"
-  valueFrom: "databricks_token"
+  valueFrom: "secret"

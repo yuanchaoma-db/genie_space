@@ -78,17 +78,17 @@ command:
 
 env:
 - name: "SPACE_ID"
-  valueFrom: "space_id"
+  value: "space_id"
 - name: "DATABRICKS_HOST"
-  valueFrom: "databricks_host"
+  value: "databricks_host"
 - name: "DATABRICKS_TOKEN"
-  valueFrom: "databricks_token"
+  valueFrom: "secret"
 ```
 
 The app.yaml configuration defines the environment variables needed for the Genie API integration. These variables are configured through Databricks Apps secrets, securely storing and accessing sensitive values:
 
-- `SPACE_ID`: The ID of your Genie space
-- `DATABRICKS_HOST`: Your Databricks workspace URL
+- `SPACE_ID`: The ID of your Genie space, for example, 011xxxxxxxxxxxxxxx5ef
+- `DATABRICKS_HOST`: Your Databricks workspace URL without the https://, for example, e2-demo-field-eng.cloud.databricks.com
 - `DATABRICKS_TOKEN`: Authentication token for API access
 
 For details on how to create an app in Databricks, please refer to the Databricks Apps Documentation.
