@@ -17,9 +17,6 @@ SPACE_ID = os.environ.get("SPACE_ID")
 DATABRICKS_HOST = os.environ.get("DATABRICKS_HOST")
 DATABRICKS_TOKEN = os.environ.get("DATABRICKS_TOKEN")
 
-# Store active conversation IDs by session ID
-active_conversations = {}
-
 class GenieClient:
     def __init__(self, host: str, token: str, space_id: str):
         self.host = host
@@ -178,7 +175,6 @@ def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame]
         - response: Either text or DataFrame response
         - query_text: SQL query text if applicable, otherwise None
     """
-    logger.info(f"Starting new conversation with question: {question[:30]}...")
     
     client = GenieClient(
         host=DATABRICKS_HOST,
@@ -192,8 +188,6 @@ def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame]
         conversation_id = response.get("conversation_id")
         message_id = response.get("message_id")
         
-        logger.info(f"Created new conversation {conversation_id}")
-        
         # Wait for the message to complete
         complete_message = client.wait_for_message_completion(conversation_id, message_id)
         
@@ -203,8 +197,7 @@ def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame]
         return conversation_id, result, query_text
         
     except Exception as e:
-        logger.error(f"Error starting new conversation: {str(e)}")
-        return None, f"Sorry, an error occurred: {str(e)}", None
+        return None, f"Sorry, an error occurred: {str(e)}. Please try again.", None
 
 def continue_conversation(conversation_id: str, question: str) -> Tuple[Union[str, pd.DataFrame], Optional[str]]:
     """
@@ -298,68 +291,24 @@ def process_genie_response(client, conversation_id, message_id, complete_message
     
     return "No response available", None
 
-def genie_query(question: str, session_id: str = None) -> Union[Tuple[str, Optional[str]], Tuple[pd.DataFrame, str]]:
+def genie_query(question: str) -> Union[Tuple[str, Optional[str]], Tuple[pd.DataFrame, str]]:
     """
     Main entry point for querying Genie.
     
     Args:
         question: The question to ask
-        session_id: The Dash session ID to associate with a conversation
         
     Returns:
         Tuple containing either:
         - (text_response, None) for text responses
         - (dataframe, sql_query) for data responses
     """
-    global active_conversations
-    if not session_id:
-        return "No session ID provided", None
-    
-    logger.info(f"Processing query for session {session_id}: {question[:30]}...")
-    
-    # Check if we have an existing conversation for this session
-    if session_id in active_conversations:
-        conversation_id = active_conversations[session_id]
-        logger.info(f"Found existing conversation {conversation_id} for session {session_id}")
-        
-        try:
-            # Continue existing conversation
-            result, query_text = continue_conversation(conversation_id, question)
-            
-            # If we got an error about conversation not found, start a new one
-            if isinstance(result, str) and "conversation has expired" in result:
-                logger.info(f"Conversation {conversation_id} expired, starting new one")
-                conversation_id, result, query_text = start_new_conversation(question)
-                
-                # Update the conversation mapping
-                if conversation_id:
-                    active_conversations[session_id] = conversation_id
-            
-            return result, query_text
-            
-        except Exception as e:
-            logger.error(f"Error in existing conversation: {str(e)}")
-            return f"Sorry, an error occurred: {str(e)}", None
-    else:
-        # No existing conversation, start a new one
+    try:
+        # Start a new conversation for each query
         conversation_id, result, query_text = start_new_conversation(question)
-        
-        # Store the conversation ID for this session
-        if conversation_id:
-            active_conversations[session_id] = conversation_id
-            
         return result, query_text
-
-def clear_conversation(session_id: str) -> None:
-    """
-    Clear the conversation mapping for a session when "New Chat" is clicked.
-    
-    Args:
-        session_id: The session ID to clear
-    """
-    global active_conversations
-    
-    if session_id in active_conversations:
-        logger.info(f"Clearing conversation for session {session_id}")
-        del active_conversations[session_id]
+            
+    except Exception as e:
+        logger.error(f"Error in conversation: {str(e)}. Please try again.")
+        return f"Sorry, an error occurred: {str(e)}. Please try again.", None
 
