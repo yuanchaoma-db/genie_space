@@ -7,6 +7,7 @@ from typing import Dict, Any, Optional, List, Union, Tuple
 import logging
 import backoff
 import uuid
+from token_minter import TokenMinter
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -15,18 +16,30 @@ load_dotenv()
 # Load environment variables
 SPACE_ID = os.environ.get("SPACE_ID")
 DATABRICKS_HOST = os.environ.get("DATABRICKS_HOST")
-DATABRICKS_TOKEN = os.environ.get("DATABRICKS_TOKEN")
+CLIENT_ID = os.environ.get("DATABRICKS_CLIENT_ID")
+CLIENT_SECRET = os.environ.get("DATABRICKS_CLIENT_SECRET")
+
+token_minter = TokenMinter(
+    client_id=CLIENT_ID,
+    client_secret=CLIENT_SECRET,
+    host=DATABRICKS_HOST
+)
+
 
 class GenieClient:
-    def __init__(self, host: str, token: str, space_id: str):
+    def __init__(self, host: str, space_id: str):
         self.host = host
-        self.token = token
         self.space_id = space_id
+        self.update_headers()
+        
+        self.base_url = f"https://{host}/api/2.0/genie/spaces/{space_id}"
+    
+    def update_headers(self) -> None:
+        """Update headers with fresh token from token_minter"""
         self.headers = {
-            "Authorization": f"Bearer {token}",
+            "Authorization": f"Bearer {token_minter.get_token()}",
             "Content-Type": "application/json"
         }
-        self.base_url = f"https://{host}/api/2.0/genie/spaces/{space_id}"
     
     @backoff.on_exception(
         backoff.expo,
@@ -40,6 +53,7 @@ class GenieClient:
     )
     def start_conversation(self, question: str) -> Dict[str, Any]:
         """Start a new conversation with the given question"""
+        self.update_headers()  # Refresh token before API call
         url = f"{self.base_url}/start-conversation"
         payload = {"content": question}
         
@@ -59,6 +73,7 @@ class GenieClient:
     )
     def send_message(self, conversation_id: str, message: str) -> Dict[str, Any]:
         """Send a follow-up message to an existing conversation"""
+        self.update_headers()  # Refresh token before API call
         url = f"{self.base_url}/conversations/{conversation_id}/messages"
         payload = {"content": message}
         
@@ -78,6 +93,7 @@ class GenieClient:
     )
     def get_message(self, conversation_id: str, message_id: str) -> Dict[str, Any]:
         """Get the details of a specific message"""
+        self.update_headers()  # Refresh token before API call
         url = f"{self.base_url}/conversations/{conversation_id}/messages/{message_id}"
         
         response = requests.get(url, headers=self.headers)
@@ -96,6 +112,7 @@ class GenieClient:
     )
     def get_query_result(self, conversation_id: str, message_id: str, attachment_id: str) -> Dict[str, Any]:
         """Get the query result using the attachment_id endpoint"""
+        self.update_headers()  # Refresh token before API call
         url = f"{self.base_url}/conversations/{conversation_id}/messages/{message_id}/attachments/{attachment_id}/query-result"
         
         response = requests.get(url, headers=self.headers)
@@ -125,6 +142,7 @@ class GenieClient:
     )
     def execute_query(self, conversation_id: str, message_id: str, attachment_id: str) -> Dict[str, Any]:
         """Execute a query using the attachment_id endpoint"""
+        self.update_headers()  # Refresh token before API call
         url = f"{self.base_url}/conversations/{conversation_id}/messages/{message_id}/attachments/{attachment_id}/execute-query"
         
         response = requests.post(url, headers=self.headers)
@@ -178,7 +196,6 @@ def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame]
     
     client = GenieClient(
         host=DATABRICKS_HOST,
-        token=DATABRICKS_TOKEN,
         space_id=SPACE_ID
     )
     
@@ -216,7 +233,6 @@ def continue_conversation(conversation_id: str, question: str) -> Tuple[Union[st
     
     client = GenieClient(
         host=DATABRICKS_HOST,
-        token=DATABRICKS_TOKEN,
         space_id=SPACE_ID
     )
     
