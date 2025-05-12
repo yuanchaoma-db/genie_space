@@ -312,7 +312,7 @@ def genie_query(question: str, token: str) -> Union[Tuple[str, Optional[str]], T
     """
     try:
         # Start a new conversation for each query
-        conversation_id, result, query_text = start_new_conversation(question)
+        conversation_id, result, query_text = start_new_conversation(question, token)
         return result, query_text
             
     except Exception as e:
