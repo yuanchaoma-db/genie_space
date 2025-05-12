@@ -67,7 +67,7 @@ class GenieClient:
         self.update_headers()  # Refresh token before API call
         url = f"{self.base_url}/conversations/{conversation_id}/messages"
         payload = {"content": message}
-        
+        logger.info(f"Sending request to {url} with headers {self.headers} and payload {payload}")
         response = requests.post(url, headers=self.headers, json=payload)
         response.raise_for_status()
         return response.json()
@@ -298,7 +298,7 @@ def process_genie_response(client, conversation_id, message_id, complete_message
     
     return "No response available", None
 
-def genie_query(question: str) -> Union[Tuple[str, Optional[str]], Tuple[pd.DataFrame, str]]:
+def genie_query(question: str, token: str) -> Union[Tuple[str, Optional[str]], Tuple[pd.DataFrame, str]]:
     """
     Main entry point for querying Genie.
     
