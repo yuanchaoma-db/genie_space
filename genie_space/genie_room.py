@@ -6,8 +6,6 @@ from dotenv import load_dotenv
 from typing import Dict, Any, Optional, List, Union, Tuple
 import logging
 import backoff
-import uuid
-from token_minter import TokenMinter
 from flask import request
 
 logging.basicConfig(level=logging.INFO)
@@ -16,17 +14,8 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Load environment variables
-SPACE_ID = os.environ.get("SPACE_ID")
+SPACE_ID = "01eee1915eaa1f718a82c9488a1d62ae"
 DATABRICKS_HOST = os.environ.get("DATABRICKS_HOST")
-CLIENT_ID = os.environ.get("DATABRICKS_CLIENT_ID")
-CLIENT_SECRET = os.environ.get("DATABRICKS_CLIENT_SECRET")
-
-token_minter = TokenMinter(
-    client_id=CLIENT_ID,
-    client_secret=CLIENT_SECRET,
-    host=DATABRICKS_HOST
-)
-
 
 class GenieClient:
     def __init__(self, host: str, space_id: str, token: str):
@@ -39,7 +28,7 @@ class GenieClient:
     
     def update_headers(self) -> None:
         self.headers = {
-            "Authorization": f"Bearer {token}",
+            "Authorization": f"Bearer {self.token}",
             "Content-Type": "application/json"
         }
     
