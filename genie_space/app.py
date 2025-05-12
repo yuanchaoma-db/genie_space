@@ -7,6 +7,8 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 import sqlparse
+from flask import request
+
 load_dotenv()
 
 # Create Dash app
@@ -390,7 +392,9 @@ def get_model_response(trigger_data, current_messages, chat_history):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
     
     try:
-        response, query_text = genie_query(user_input)
+        headers = request.headers
+        user_token = headers.get('X-Forwarded-Access-Token')
+        response, query_text = genie_query(user_input, user_token)
         
         if isinstance(response, str):
             content = dcc.Markdown(response, className="message-text")

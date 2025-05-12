@@ -8,6 +8,8 @@ import logging
 import backoff
 import uuid
 from token_minter import TokenMinter
+from flask import request
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -27,17 +29,17 @@ token_minter = TokenMinter(
 
 
 class GenieClient:
-    def __init__(self, host: str, space_id: str):
+    def __init__(self, host: str, space_id: str, token: str):
         self.host = host
         self.space_id = space_id
+        self.token = token
         self.update_headers()
         
         self.base_url = f"https://{host}/api/2.0/genie/spaces/{space_id}"
     
     def update_headers(self) -> None:
-        """Update headers with fresh token from token_minter"""
         self.headers = {
-            "Authorization": f"Bearer {token_minter.get_token()}",
+            "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
     
@@ -180,7 +182,7 @@ class GenieClient:
             
         raise TimeoutError(f"Message processing timed out after {timeout} seconds")
 
-def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame], Optional[str]]:
+def start_new_conversation(question: str, token: str) -> Tuple[str, Union[str, pd.DataFrame], Optional[str]]:
     """
     Start a new conversation with Genie.
     
@@ -193,10 +195,10 @@ def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame]
         - response: Either text or DataFrame response
         - query_text: SQL query text if applicable, otherwise None
     """
-    
     client = GenieClient(
         host=DATABRICKS_HOST,
-        space_id=SPACE_ID
+        space_id=SPACE_ID,
+        token=token
     )
     
     try:
@@ -216,7 +218,7 @@ def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame]
     except Exception as e:
         return None, f"Sorry, an error occurred: {str(e)}. Please try again.", None
 
-def continue_conversation(conversation_id: str, question: str) -> Tuple[Union[str, pd.DataFrame], Optional[str]]:
+def continue_conversation(conversation_id: str, question: str, token: str) -> Tuple[Union[str, pd.DataFrame], Optional[str]]:
     """
     Send a follow-up message in an existing conversation.
     
@@ -230,10 +232,10 @@ def continue_conversation(conversation_id: str, question: str) -> Tuple[Union[st
         - query_text: SQL query text if applicable, otherwise None
     """
     logger.info(f"Continuing conversation {conversation_id} with question: {question[:30]}...")
-    
     client = GenieClient(
         host=DATABRICKS_HOST,
-        space_id=SPACE_ID
+        space_id=SPACE_ID,
+        token=token
     )
     
     try:
