@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from typing import Dict, Any, Optional, List, Union, Tuple
 import logging
 from databricks.sdk import WorkspaceClient
-from databricks.sdk.service import genie
 from databricks.sdk.core import Config
 
 logging.basicConfig(level=logging.INFO)
