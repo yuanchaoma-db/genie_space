@@ -10,12 +10,6 @@ from databricks.sdk.core import Config
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Clear OAuth-related environment variables
-oauth_vars = ['DATABRICKS_CLIENT_ID', 'DATABRICKS_CLIENT_SECRET']
-for var in oauth_vars:
-    if var in os.environ:
-        del os.environ[var]
-
 load_dotenv()
 
 # Load environment variables
@@ -28,10 +22,11 @@ class GenieClient:
         self.space_id = space_id
         self.token = token
         
-        # Configure SDK with retry settings
+        # Configure SDK with retry settings and explicit PAT auth
         config = Config(
             host=f"https://{host}",
             token=token,
+            auth_type="pat",  # Explicitly set authentication type to PAT
             retry_timeout_seconds=300,  # 5 minutes total retry timeout
             max_retries=5,              # Maximum number of retries
             retry_delay_seconds=2,      # Initial delay between retries
