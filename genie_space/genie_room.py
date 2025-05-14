@@ -10,6 +10,12 @@ from databricks.sdk.core import Config
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Clear OAuth-related environment variables
+oauth_vars = ['DATABRICKS_CLIENT_ID', 'DATABRICKS_CLIENT_SECRET']
+for var in oauth_vars:
+    if var in os.environ:
+        del os.environ[var]
+
 load_dotenv()
 
 # Load environment variables
