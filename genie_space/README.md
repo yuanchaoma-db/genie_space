@@ -52,6 +52,7 @@ env:
   value: "space_id"
 
 ```
+![](./assets/genie-space7.png)
 
 3. Create an app in the Databricks apps interface and then deploy the path to the code
 
