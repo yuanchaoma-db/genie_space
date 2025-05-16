@@ -1,7 +1,8 @@
 # Databricks Genie API Integration Demo
 
 ![](./assets/genie_room0.png)
-![](./assets/genie_room1.png)
+![](./assets/genie-space.png)
+![](./assets/genie-space4.png)
 
 This repository demonstrates how to integrate Databricks' AI/BI Genie Conversation APIs into custom Databricks Apps applications, allowing users to interact with their structured data using natural language.
 
@@ -29,47 +30,17 @@ This demo shows how to create a simple interface that connects to the Genie API,
 2. View generated SQL and results
 3. Ask follow-up questions that maintain context
 
-## Environment Setup
+## Deploying to Databricks apps
 
-Clone the repository:
+1. Clone the repository to workspace directory such as 
+/Workspace/Users/wenwen.xie@databricks.com/genie_space
 ```bash
-git clone <repository-url>
+git clone https://github.com/vivian-xie-db/genie_space.git
 ```
-
-Create and activate a Python virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: .\venv\Scripts\activate
-```
-
-Install Python dependencies:
-```bash
-pip install -r requirements.txt
-```
+![](./assets/genie-space1.png)
 
 
-## Deploying to Databricks Apps
-
-This application is designed to be deployed as a Databricks App, which provides several advantages:
-
-- **Secure Authentication**: Leverages Databricks' built-in authentication
-- **Access Control**: Inherits workspace permissions
-- **Data Proximity**: Runs close to your data for optimal performance
-- **Simplified Deployment**: No need for external hosting or infrastructure
-
-### a. Install the Databricks CLI:
-
-```bash
-brew install databricks
-```
-
-### b. Create the app in your workspace:
-
-```bash
-databricks apps create genie-app
-```
-
-### c. Create an app.yaml file in the root directory:
+2. Change the "SPACE_ID" environment value to the ID of your Genie space, for example, 01f02a31663e19b0a18f1a2ed7a435a7 in the app.yaml file in the root directory:
 
 ```yaml
 command:
@@ -79,37 +50,26 @@ command:
 env:
 - name: "SPACE_ID"
   value: "space_id"
-- name: "DATABRICKS_HOST"
-  value: "databricks_host"
-- name: "DATABRICKS_TOKEN"
-  valueFrom: "secret"
+
 ```
+![](./assets/genie-space7.png)
 
-The app.yaml configuration defines the environment variables needed for the Genie API integration. These variables are configured through Databricks Apps secrets, securely storing and accessing sensitive values:
+3. Create an app in the Databricks apps interface and then deploy the path to the code
 
-- `SPACE_ID`: The ID of your Genie space, for example, 011xxxxxxxxxxxxxxx5ef
-- `DATABRICKS_HOST`: Your Databricks workspace URL without the https://, for example, e2-demo-field-eng.cloud.databricks.com
-- `DATABRICKS_TOKEN`: Authentication token for API access
+![](./assets/genie-space2.png)
 
-For details on how to create an app in Databricks, please refer to the Databricks Apps Documentation.
 
-### d. Sync your local files to Databricks workspace:
+4. Grant the app service principal permission can_use to the SQL warehouse that powers genie
 
-```bash
-# Add node_modules/ and venv/ to .gitignore first if not already present
-databricks sync --watch . /Workspace/Users/<your-email>/genie-app
-```
+![](./assets/genie-space5.png)
 
-### e. Deploy the app:
 
-```bash
-databricks apps deploy genie-app --source-code-path /Workspace/Users/<your-email>/genie-app
-```
+
+![](./assets/genie-space6.png)
+
 
 ## Resources
 
 - [Databricks Genie Documentation](https://docs.databricks.com/aws/en/genie)
 - [Conversation APIs Documentation](https://docs.databricks.com/api/workspace/genie)
 - [Databricks Apps Documentation](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/)
-
-
