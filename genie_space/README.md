@@ -1,5 +1,6 @@
 # Databricks Genie API Integration Demo
 
+
 ![](./assets/genie_room0.png)
 ![](./assets/genie-space.png)
 ![](./assets/genie-space4.png)
@@ -83,6 +84,7 @@ env:
 ![](./assets/troubleshooting1.png)
 
    Click open the query and check if there is any error or any permission issues.
+
 
 ![](./assets/troubleshooting2.png)
 
