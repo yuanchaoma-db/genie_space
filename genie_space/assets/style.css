@@ -1033,7 +1033,7 @@ input:disabled, button:disabled {
 }
 
 .sql-pre {
-    background-color: #f6f8fa;
+    background-color: #f4f4f4;
     padding: 16px;
     margin: 0;
     border-radius: 6px;
@@ -1327,3 +1327,8 @@ input:disabled, button:disabled {
     padding-top: 24px;
     margin-top: 24px;
 } 
+
+.insight-output strong, .insight-output b{
+    color: #ff0396; /* Pinkish-purple */
+    font-weight: 600;
+}
