@@ -7,6 +7,12 @@
 
 This repository demonstrates how to integrate Databricks' AI/BI Genie Conversation APIs into custom Databricks Apps applications, allowing users to interact with their structured data using natural language.
 
+You can also click the Generate insights button and generate deep analysis and trends of your data.
+![](./assets/insights1.png)
+![](./assets/insights2.png)
+
+
+
 ## Overview
 
 This app is a Dash application featuring a chat interface powered by Databricks Genie Conversation APIs, built specifically to run as a Databricks App. This integration showcases how to leverage Databricks' platform capabilities to create interactive data applications with minimal infrastructure overhead.
