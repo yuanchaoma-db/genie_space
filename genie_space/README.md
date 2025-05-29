@@ -47,7 +47,8 @@ git clone https://github.com/vivian-xie-db/genie_space.git
 ![](./assets/genie-space1.png)
 
 
-2. Change the "SPACE_ID" environment value to the ID of your Genie space, for example, 01f02a31663e19b0a18f1a2ed7a435a7 in the app.yaml file in the root directory:
+2. Change the "SPACE_ID" environment value to the ID of your Genie space, for example, 01f02a31663e19b0a18f1a2ed7a435a7 in the app.yaml file in the root directory and add 
+a model serving endpoint in App resources for adding a model for insights generation:
 
 ```yaml
 command:
@@ -57,23 +58,28 @@ command:
 env:
 - name: "SPACE_ID"
   value: "space_id"
+- name: "SERVING_ENDPOINT_NAME"
+  valueFrom: "serving_endpoint"
 
 ```
 ![](./assets/genie-space7.png)
+![](./assets/genie-space8.png)
 
 3. Create an app in the Databricks apps interface and then deploy the path to the code
 
 ![](./assets/genie-space2.png)
 
+4. Grant the service principal can_run permission to the genie space.
+![](./assets/genie-space9.png)
 
-4. Grant the service principal permission can_use to the SQL warehouse that powers genie
+5. Grant the service principal permission can_use to the SQL warehouse that powers genie
 
 ![](./assets/genie-space5.png)
 
 
 ![](./assets/genie-space6.png)
 
-5. Grant the service principal appropriate privileges to the underlying resources such as catalog, schema and tables.
+6. Grant the service principal appropriate privileges to the underlying resources such as catalog, schema and tables.
 
    note: I am using ALL PRIVILEGES for demo purpose but you can do use catalog on catalog, use schema on schema and select on tables
 
