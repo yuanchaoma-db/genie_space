@@ -1,15 +1,15 @@
 # Databricks Genie API Integration Demo
 
 
-![](./assets/genie_room0.png)
-![](./assets/genie-space.png)
-![](./assets/genie-space4.png)
+![](./genie_space/assets/genie_room0.png)
+![](./genie_space/assets/genie-space.png)
+![](./genie_space/assets/genie-space4.png)
 
 This repository demonstrates how to integrate Databricks' AI/BI Genie Conversation APIs into custom Databricks Apps applications, allowing users to interact with their structured data using natural language.
 
 You can also click the Generate insights button and generate deep analysis and trends of your data.
-![](./assets/insights1.png)
-![](./assets/insights2.png)
+![](./genie_space/assets/insights1.png)
+![](./genie_space/assets/insights2.png)
 
 
 
@@ -44,7 +44,7 @@ This demo shows how to create a simple interface that connects to the Genie API,
 ```bash
 git clone https://github.com/vivian-xie-db/genie_space.git
 ```
-![](./assets/genie-space1.png)
+![](./genie_space/assets/genie-space1.png)
 
 
 2. Change the "SPACE_ID" environment value to the ID of your Genie space, for example, 01f02a31663e19b0a18f1a2ed7a435a7 in the app.yaml file in the root directory and add 
@@ -62,43 +62,43 @@ env:
   valueFrom: "serving_endpoint"
 
 ```
-![](./assets/genie-space7.png)
-![](./assets/genie-space8.png)
+![](./genie_space/assets/genie-space7.png)
+![](./genie_space/assets/genie-space8.png)
 
 3. Create an app in the Databricks apps interface and then deploy the path to the code
 
-![](./assets/genie-space2.png)
+![](./genie_space/assets/genie-space2.png)
 
 4. Grant the service principal can_run permission to the genie space.
-![](./assets/genie-space9.png)
+![](./genie_space/assets/genie-space9.png)
 
 5. Grant the service principal permission can_use to the SQL warehouse that powers genie
 
-![](./assets/genie-space5.png)
+![](./genie_space/assets/genie-space5.png)
 
 
-![](./assets/genie-space6.png)
+![](./genie_space/assets/genie-space6.png)
 
 6. Grant the service principal appropriate privileges to the underlying resources such as catalog, schema and tables.
 
    note: I am using ALL PRIVILEGES for demo purpose but you can do use catalog on catalog, use schema on schema and select on tables
 
-![](./assets/table1.png)
+![](./genie_space/assets/table1.png)
 
-![](./assets/table2.png)
+![](./genie_space/assets/table2.png)
 
-![](./assets/table3.png)
+![](./genie_space/assets/table3.png)
 
 6. Troubleshooting issues:
    
    For trouble shooting, navigate to the genie room monitoring page and check if the query has been sent successfully to the genie room via the API. 
 
-![](./assets/troubleshooting1.png)
+![](./genie_space/assets/troubleshooting1.png)
 
    Click open the query and check if there is any error or any permission issues.
 
 
-![](./assets/troubleshooting2.png)
+![](./genie_space/assets/troubleshooting2.png)
 
 
 ## Resources
