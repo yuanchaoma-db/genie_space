@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Load environment variables
-SPACE_ID = "01eee1915eaa1f718a82c9488a1d62ae"
 DATABRICKS_HOST = os.environ.get("DATABRICKS_HOST")
 
 class GenieClient:
@@ -25,7 +24,7 @@ class GenieClient:
         # Configure SDK with retry settings and explicit PAT auth
         config = Config(
             host=f"https://{host}",
-            token=token,
+            token=os.environ.get("DATABRICKS_TOKEN"),
             auth_type="pat",  # Explicitly set authentication type to PAT
             retry_timeout_seconds=300,  # 5 minutes total retry timeout
             max_retries=5,              # Maximum number of retries
@@ -113,13 +112,36 @@ class GenieClient:
             
         raise TimeoutError(f"Message processing timed out after {timeout} seconds")
 
-def start_new_conversation(question: str, token: str) -> Tuple[str, Union[str, pd.DataFrame], Optional[str]]:
+    def list_spaces(self) -> list:
+        """List all Genie spaces available to the user."""
+        # can we mock some response here?
+        response = [
+            {
+                "space_id": "123",
+                "title": "Genie Space 1",
+                "description": "This is the first Genie space"
+            },
+            {
+                "space_id": "456",
+                "title": "Genie Space 2",
+                "description": "This is the second Genie space"
+            }
+        ]
+        
+        #response = self.client.genie.list_spaces()
+        print("response----", response)
+
+        # response.spaces is a list of GenieSpace objects
+        #return [space.as_dict() for space in (response.spaces or [])]
+        return response
+
+def start_new_conversation(question: str, token: str, space_id: str) -> Tuple[str, Union[str, pd.DataFrame], Optional[str]]:
     """
     Start a new conversation with Genie.
     """
     client = GenieClient(
         host=DATABRICKS_HOST,
-        space_id=SPACE_ID,
+        space_id=space_id,
         token=token
     )
     
@@ -140,14 +162,14 @@ def start_new_conversation(question: str, token: str) -> Tuple[str, Union[str, p
     except Exception as e:
         return None, f"Sorry, an error occurred: {str(e)}. Please try again.", None
 
-def continue_conversation(conversation_id: str, question: str, token: str) -> Tuple[Union[str, pd.DataFrame], Optional[str]]:
+def continue_conversation(conversation_id: str, question: str, token: str, space_id: str) -> Tuple[Union[str, pd.DataFrame], Optional[str]]:
     """
     Send a follow-up message in an existing conversation.
     """
     logger.info(f"Continuing conversation {conversation_id} with question: {question[:30]}...")
     client = GenieClient(
         host=DATABRICKS_HOST,
-        space_id=SPACE_ID,
+        space_id=space_id,
         token=token
     )
     
@@ -211,13 +233,13 @@ def process_genie_response(client, conversation_id, message_id, complete_message
     
     return "No response available", None
 
-def genie_query(question: str, token: str) -> Union[Tuple[str, Optional[str]], Tuple[pd.DataFrame, str]]:
+def genie_query(question: str, token: str, space_id: str) -> Union[Tuple[str, Optional[str]], Tuple[pd.DataFrame, str]]:
     """
     Main entry point for querying Genie.
     """
     try:
         # Start a new conversation for each query
-        conversation_id, result, query_text = start_new_conversation(question, token)
+        conversation_id, result, query_text = start_new_conversation(question, token, space_id)
         return result, query_text
             
     except Exception as e:

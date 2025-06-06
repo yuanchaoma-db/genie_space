@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 import sqlparse
 from flask import request
 import logging
+from genie_room import GenieClient
+import os
 
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
@@ -25,19 +27,30 @@ app = dash.Dash(
 )
 
 # Add default welcome text that can be customized
-DEFAULT_WELCOME_TITLE = "Supply Chain Optimization"
-DEFAULT_WELCOME_DESCRIPTION = "Analyze your Supply Chain Performance leveraging AI/BI Dashboard. Deep dive into your data and metrics."
+DEFAULT_WELCOME_TITLE = "Welcome to Your Data Assistant"
+DEFAULT_WELCOME_DESCRIPTION = "Explore and analyze your data with AI-powered insights. Ask questions, discover trends, and make data-driven decisions."
 
 # Add default suggestion questions
 DEFAULT_SUGGESTIONS = [
     "What tables are there and how are they connected? Give me a short summary.",
-    "Which distribution center has the highest chance of being a bottleneck?",
+    "Describe the relationships between the tables.",
     "Explain the dataset",
-    "What was the demand for our products by week in 2024?"
+    "What columns or fields are available in this dataset?"
 ]
 
 # Define the layout
 app.layout = html.Div([
+    dcc.Store(id="selected-space-id", data=None),
+    dcc.Store(id="spaces-list", data=[]),
+    # Space selection overlay
+    html.Div([
+        html.Div([
+            html.H2("Select a Genie Space", className="space-select-title"),
+            dcc.Dropdown(id="space-dropdown", options=[], placeholder="Choose a Genie Space", className="space-select-dropdown"),
+            html.Button("Select", id="select-space-button", className="space-select-button"),
+            html.Div(id="space-select-error", className="space-select-error")
+        ], className="space-select-card")
+    ], id="space-select-container", className="space-select-container"),
     # Top navigation bar
     html.Div([
         # Left component containing both nav-left and sidebar
@@ -250,6 +263,33 @@ app.layout = html.Div([
     dcc.Store(id="session-store", data={"current_session": None})
 ])
 
+# Add modal for entering suggested questions after space selection
+app.layout.children.insert(2, dbc.Modal([
+    dbc.ModalHeader(dbc.ModalTitle("Enter Suggested Questions")),
+    dbc.ModalBody([
+        html.Div([
+            html.Label("Suggestion 1", className="modal-label"),
+            dbc.Input(id="suggestion-modal-1", type="text", placeholder="First suggestion question", className="modal-input mb-2"),
+        ]),
+        html.Div([
+            html.Label("Suggestion 2", className="modal-label"),
+            dbc.Input(id="suggestion-modal-2", type="text", placeholder="Second suggestion question", className="modal-input mb-2"),
+        ]),
+        html.Div([
+            html.Label("Suggestion 3", className="modal-label"),
+            dbc.Input(id="suggestion-modal-3", type="text", placeholder="Third suggestion question", className="modal-input mb-2"),
+        ]),
+        html.Div([
+            html.Label("Suggestion 4", className="modal-label"),
+            dbc.Input(id="suggestion-modal-4", type="text", placeholder="Fourth suggestion question", className="modal-input"),
+        ]),
+    ]),
+    dbc.ModalFooter([
+        dbc.Button("Skip", id="skip-suggestions-modal", className="modal-button", color="light"),
+        dbc.Button("Submit", id="submit-suggestions-modal", className="modal-button-primary", color="primary")
+    ])
+], id="suggestions-modal", is_open=False, size="lg", backdrop="static"))
+
 # Store chat history
 chat_history = []
 
@@ -417,11 +457,11 @@ def handle_all_inputs(s1_clicks, s2_clicks, s3_clicks, s4_clicks, send_clicks, s
      Output("query-running-store", "data", allow_duplicate=True)],
     [Input("chat-trigger", "data")],
     [State("chat-messages", "children"),
-     State("chat-history-store", "data")],
+     State("chat-history-store", "data"),
+     State("selected-space-id", "data")],
     prevent_initial_call=True
 )
-def get_model_response(trigger_data, current_messages, chat_history):
-    logger.info(f"get_model_response called with trigger_data={trigger_data}, current_messages={current_messages}, chat_history={chat_history}")
+def get_model_response(trigger_data, current_messages, chat_history, selected_space_id):
     if not trigger_data or not trigger_data.get("trigger"):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
     
@@ -432,7 +472,7 @@ def get_model_response(trigger_data, current_messages, chat_history):
     try:
         headers = request.headers
         user_token = headers.get('X-Forwarded-Access-Token')
-        response, query_text = genie_query(user_input, user_token)
+        response, query_text = genie_query(user_input, user_token, selected_space_id)
         
         if isinstance(response, str):
             content = dcc.Markdown(response, className="message-text")
@@ -860,6 +900,113 @@ def generate_insights(n_clicks, btn_id, chat_history):
         style={"marginTop": "32px", "background": "#f4f4f4", "padding": "16px", "borderRadius": "4px"},
         className="insight-output"
     )
+
+# Callback to fetch spaces on load
+@app.callback(
+    Output("spaces-list", "data"),
+    Input("space-select-container", "id"),
+    prevent_initial_call=False
+)
+def fetch_spaces(_):
+    try:
+        headers = request.headers
+        token = headers.get('X-Forwarded-Access-Token')
+        host = os.environ.get("DATABRICKS_HOST")
+        client = GenieClient(host=host, space_id="", token=token)
+        spaces = client.list_spaces()
+        return spaces
+    except Exception as e:
+        return []
+
+# Populate dropdown options
+@app.callback(
+    Output("space-dropdown", "options"),
+    Input("spaces-list", "data"),
+    prevent_initial_call=False
+)
+def update_space_dropdown(spaces):
+    if not spaces:
+        return []
+    return [{"label": f"{s['title']} ({s['space_id']})", "value": s["space_id"]} for s in spaces]
+
+# Handle space selection
+@app.callback(
+    [Output("selected-space-id", "data"),
+     Output("space-select-container", "style"),
+     Output("main-content", "style"),
+     Output("space-select-error", "children"),
+     Output("welcome-title", "children"),
+     Output("welcome-description", "children")],
+    Input("select-space-button", "n_clicks"),
+    State("space-dropdown", "value"),
+    State("spaces-list", "data"),
+    prevent_initial_call=True
+)
+def select_space(n_clicks, space_id, spaces):
+    if not n_clicks:
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    if not space_id:
+        return dash.no_update, {"display": "flex", "flexDirection": "column", "alignItems": "center", "justifyContent": "center", "height": "100vh"}, {"display": "none"}, "Please select a Genie space.", dash.no_update, dash.no_update
+    # Find the selected space's title and description
+    selected = next((s for s in spaces if s["space_id"] == space_id), None)
+    title = selected["title"] if selected and selected.get("title") else DEFAULT_WELCOME_TITLE
+    description = selected["description"] if selected and selected.get("description") else DEFAULT_WELCOME_DESCRIPTION
+    return space_id, {"display": "none"}, {"display": "block"}, "", title, description
+
+# Add a callback to control visibility of main-content and space-select-container
+@app.callback(
+    [Output("main-content", "style", allow_duplicate=True), Output("space-select-container", "style", allow_duplicate=True)],
+    Input("selected-space-id", "data"),
+    prevent_initial_call=True
+)
+def toggle_main_ui(selected_space_id):
+    if selected_space_id:
+        return {"display": "block"}, {"display": "none"}
+    else:
+        return {"display": "none"}, {"display": "flex", "flexDirection": "column", "alignItems": "center", "justifyContent": "center", "height": "100vh"}
+
+# Open the suggestions modal after space selection
+@app.callback(
+    Output("suggestions-modal", "is_open"),
+    Input("selected-space-id", "data"),
+    State("suggestions-modal", "is_open"),
+    prevent_initial_call=True
+)
+def open_suggestions_modal(selected_space_id, is_open):
+    if selected_space_id and not is_open:
+        return True
+    return dash.no_update
+
+# Handle submit/skip for suggestions modal
+@app.callback(
+    [Output("suggestion-1-text", "children", allow_duplicate=True),
+     Output("suggestion-2-text", "children", allow_duplicate=True),
+     Output("suggestion-3-text", "children", allow_duplicate=True),
+     Output("suggestion-4-text", "children", allow_duplicate=True),
+     Output("suggestions-modal", "is_open", allow_duplicate=True)],
+    [Input("submit-suggestions-modal", "n_clicks"),
+     Input("skip-suggestions-modal", "n_clicks")],
+    [State("suggestion-modal-1", "value"),
+     State("suggestion-modal-2", "value"),
+     State("suggestion-modal-3", "value"),
+     State("suggestion-modal-4", "value")],
+    prevent_initial_call=True
+)
+def handle_suggestions_modal(submit, skip, s1, s2, s3, s4):
+    ctx = callback_context
+    if not ctx.triggered:
+        return [dash.no_update] * 5
+    trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
+    if trigger_id == "skip-suggestions-modal":
+        return DEFAULT_SUGGESTIONS + [False]
+    # On submit, use entered values or defaults
+    suggestions = [
+        s1 if s1 else DEFAULT_SUGGESTIONS[0],
+        s2 if s2 else DEFAULT_SUGGESTIONS[1],
+        s3 if s3 else DEFAULT_SUGGESTIONS[2],
+        s4 if s4 else DEFAULT_SUGGESTIONS[3],
+    ]
+    return suggestions + [False]
 
 if __name__ == "__main__":
     app.run_server(debug=True)
