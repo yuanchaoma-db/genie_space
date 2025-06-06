@@ -467,10 +467,11 @@ body {
     display: flex;
     flex-direction: column;
     width: 100%;
-    overflow-y: scroll;
+    overflow-y: auto;
     scrollbar-width: none;
     scroll-behavior: smooth;
-    -ms-overflow-style: none;  /* IE and Edge */
+    -ms-overflow-style: none;  
+    max-height: calc(100vh - 48px - 90px - 20px);
 }
 
 .chat-messages::-webkit-scrollbar {

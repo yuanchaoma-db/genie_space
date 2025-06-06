@@ -67,7 +67,7 @@ class GenieClient:
 
     def get_query_result(self, conversation_id: str, message_id: str, attachment_id: str) -> Dict[str, Any]:
         """Get the query result using the attachment_id endpoint"""
-        response = self.client.genie.get_query_result(
+        response = self.client.genie.get_message_attachment_query_result(
             space_id=self.space_id,
             conversation_id=conversation_id,
             message_id=message_id,
@@ -117,7 +117,7 @@ class GenieClient:
         # can we mock some response here?
         response = [
             {
-                "space_id": "123",
+                "space_id": "01f03bcefff614e6a6de93a688fa37d8",
                 "title": "Genie Space 1",
                 "description": "This is the first Genie space"
             },
@@ -129,7 +129,6 @@ class GenieClient:
         ]
         
         #response = self.client.genie.list_spaces()
-        print("response----", response)
 
         # response.spaces is a list of GenieSpace objects
         #return [space.as_dict() for space in (response.spaces or [])]

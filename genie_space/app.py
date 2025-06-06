@@ -260,7 +260,8 @@ app.layout = html.Div([
     dcc.Store(id="chat-trigger", data={"trigger": False, "message": ""}),
     dcc.Store(id="chat-history-store", data=[]),
     dcc.Store(id="query-running-store", data=False),
-    dcc.Store(id="session-store", data={"current_session": None})
+    dcc.Store(id="session-store", data={"current_session": None}),
+    html.Div(id='dummy-insight-scroll')
 ])
 
 # Add modal for entering suggested questions after space selection
@@ -694,10 +695,12 @@ def show_chat_history(n_clicks, chat_history, current_chat_list, session_data):
 app.clientside_callback(
     """
     function(children) {
-        var chatMessages = document.getElementById('chat-messages');
-        if (chatMessages) {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
+        setTimeout(function() {
+            var chatMessages = document.getElementById('chat-messages');
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }, 100);
         return '';
     }
     """,
@@ -1007,6 +1010,27 @@ def handle_suggestions_modal(submit, skip, s1, s2, s3, s4):
         s4 if s4 else DEFAULT_SUGGESTIONS[3],
     ]
     return suggestions + [False]
+
+# Add clientside callback for scrolling to bottom of chat when insight is generated
+app.clientside_callback(
+    """
+    function(children) {
+        setTimeout(function() {
+            var chatMessages = document.getElementById('chat-messages');
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                if (chatMessages.lastElementChild) {
+                    chatMessages.lastElementChild.scrollIntoView({behavior: 'auto', block: 'end'});
+                }
+            }
+        }, 100);
+        return '';
+    }
+    """,
+    Output('dummy-insight-scroll', 'children'),
+    Input({'type': 'insight-output', 'index': dash.dependencies.ALL}, 'children'),
+    prevent_initial_call=True
+)
 
 if __name__ == "__main__":
     app.run_server(debug=True)
