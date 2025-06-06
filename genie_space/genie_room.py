@@ -114,13 +114,13 @@ class GenieClient:
 
     def list_spaces(self) -> list:
         """List all Genie spaces available to the user."""
-        response = self.client.genie.list_spaces()
+        #response = self.client.genie.list_spaces()
         # mock response
-        return [{"space_id": "123", "title": "Test Space", "description": "Test Description"}]
-        if hasattr(response, 'spaces'):
-            return [space.as_dict() for space in (response.spaces or [])]
-        else:
-            return []
+        return [{"space_id": "01f03bcefff614e6a6de93a688fa37d8", "title": "Test Space", "description": "Test Description"}]
+        # if hasattr(response, 'spaces'):
+        #     return [space.as_dict() for space in (response.spaces or [])]
+        # else:
+        #     return []
 
 def start_new_conversation(question: str, token: str, space_id: str) -> Tuple[str, Union[str, pd.DataFrame], Optional[str]]:
     """
