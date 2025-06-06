@@ -293,7 +293,7 @@ body {
 }
 
 .welcome-container.hidden {
-    display: none;
+    display: none !important;
 }
 
 .welcome-container.visible {

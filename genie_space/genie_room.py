@@ -115,6 +115,8 @@ class GenieClient:
     def list_spaces(self) -> list:
         """List all Genie spaces available to the user."""
         response = self.client.genie.list_spaces()
+        # mock response
+        return [{"space_id": "123", "title": "Test Space", "description": "Test Description"}]
         if hasattr(response, 'spaces'):
             return [space.as_dict() for space in (response.spaces or [])]
         else:

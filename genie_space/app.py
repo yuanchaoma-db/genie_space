@@ -161,7 +161,7 @@ app.layout = html.Div([
                 html.Div("Always review the accuracy of responses.", className="disclaimer-fixed")
             ], id="fixed-input-wrapper", className="fixed-input-wrapper"),
         ], id="chat-container", className="chat-container"),
-    ], id="main-content", className="main-content"),
+    ], id="main-content", className="main-content", style={"display": "none"}),
     
     html.Div(id='dummy-output'),
     dcc.Store(id="chat-trigger", data={"trigger": False, "message": ""}),
@@ -786,6 +786,17 @@ def logout_and_clear_space(n_clicks):
     if n_clicks:
         return None
     return dash.no_update
+
+@app.callback(
+    Output("welcome-container", "className"),
+    Input("selected-space-id", "data"),
+    prevent_initial_call=False
+)
+def toggle_welcome_container(selected_space_id):
+    if selected_space_id:
+        return "welcome-container visible"
+    else:
+        return "welcome-container hidden"
 
 if __name__ == "__main__":
     app.run_server(debug=True)
