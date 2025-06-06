@@ -885,7 +885,13 @@ body::-webkit-scrollbar {
     align-items: flex-start;
 }
 
-/* Tooltip styling */
+/* Tooltip for query lock: only show on hover of disabled input or send button */
+.fixed-input-container:hover > #query-tooltip,
+.fixed-input-container:focus-within > #query-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
 .query-tooltip {
     position: absolute;
     top: -40px;
@@ -915,14 +921,9 @@ body::-webkit-scrollbar {
     border-color: #333 transparent transparent transparent;
 }
 
-.query-tooltip.visible {
-    opacity: 1;
-    visibility: visible;
-}
-
-.query-tooltip.hidden {
-    opacity: 0;
-    visibility: hidden;
+/* Remove old visible/hidden classes for .query-tooltip */
+.query-tooltip.visible, .query-tooltip.hidden {
+    display: none;
 }
 
 /* Style for disabled inputs */

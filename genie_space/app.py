@@ -158,7 +158,7 @@ app.layout = html.Div([
                         ], className="input-buttons-right"),
                         html.Div("You can only submit one query at a time", 
                                 id="query-tooltip", 
-                                className="query-tooltip hidden")
+                                className="query-tooltip")
                     ], id="fixed-input-container", className="fixed-input-container"),
                     html.Div("Always review the accuracy of responses.", className="disclaimer-fixed")
                 ], id="fixed-input-wrapper", className="fixed-input-wrapper"),
@@ -355,8 +355,8 @@ def get_model_response(trigger_data, current_messages, chat_history, selected_sp
     
     try:
         headers = request.headers
-        # user_token = os.environ.get("DATABRICKS_TOKEN")
-        user_token = headers.get('X-Forwarded-Access-Token')
+        user_token = os.environ.get("DATABRICKS_TOKEN")
+        # user_token = headers.get('X-Forwarded-Access-Token')
         response, query_text = genie_query(user_input, user_token, selected_space_id)
         
         if isinstance(response, str):
@@ -624,17 +624,13 @@ def reset_query_running(chat_messages):
     [Output("chat-input-fixed", "disabled"),
      Output("send-button-fixed", "disabled"),
      Output("new-chat-button", "disabled"),
-     Output("sidebar-new-chat-button", "disabled"),
-     Output("query-tooltip", "className")],
+     Output("sidebar-new-chat-button", "disabled")],
     [Input("query-running-store", "data")],
     prevent_initial_call=True
 )
 def toggle_input_disabled(query_running):
-    # Show tooltip when query is running, hide it otherwise
-    tooltip_class = "query-tooltip visible" if query_running else "query-tooltip hidden"
-    
     # Disable input and buttons when query is running
-    return query_running, query_running, query_running, query_running, tooltip_class
+    return query_running, query_running, query_running, query_running
 
 # Add callback for toggling SQL query visibility
 @app.callback(
@@ -683,8 +679,8 @@ def generate_insights(n_clicks, btn_id, chat_history):
 def fetch_spaces(_):
     try:
         headers = request.headers
-        # token = os.environ.get("DATABRICKS_TOKEN")
-        token = headers.get('X-Forwarded-Access-Token')
+        token = os.environ.get("DATABRICKS_TOKEN")
+        # token = headers.get('X-Forwarded-Access-Token')
         host = os.environ.get("DATABRICKS_HOST")
         client = GenieClient(host=host, space_id="", token=token)
         spaces = client.list_spaces()
