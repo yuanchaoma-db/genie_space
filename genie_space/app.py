@@ -39,7 +39,10 @@ app.layout = html.Div([
         # Space selection overlay
         html.Div([
             html.Div([
-                html.Div("Loading Genie Spaces...", id="space-select-title", className="space-select-title"),
+                html.Div([
+                    html.Span(className="spinner", style={"marginRight": "10px"}),
+                    "Loading Genie Spaces..."
+                ], id="space-select-title", className="space-select-title"),
                 dcc.Dropdown(id="space-dropdown", options=[], placeholder="Choose a Genie Space", className="space-select-dropdown", optionHeight=60, searchable=True),
                 html.Button("Select", id="select-space-button", className="space-select-button"),
                 html.Div(id="space-select-error", className="space-select-error")
@@ -794,7 +797,7 @@ def set_root_style(selected_space_id):
 )
 def update_space_select_title(spaces):
     if not spaces:
-        return "Waiting for Genie Spaces to load..."
+        return [html.Span(className="spinner", style={"marginRight": "10px"}), "Waiting for Genie Spaces to load..."]
     return "Select a Genie Space"
 
 if __name__ == "__main__":
