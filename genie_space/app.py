@@ -40,7 +40,7 @@ app.layout = html.Div([
         html.Div([
             html.Div([
                 html.Div([
-                    html.Span(className="spinner", style={"marginRight": "10px"}),
+                    html.Span(className="space-select-spinner"),
                     "Loading Genie Spaces..."
                 ], id="space-select-title", className="space-select-title"),
                 dcc.Dropdown(id="space-dropdown", options=[], placeholder="Choose a Genie Space", className="space-select-dropdown", optionHeight=60, searchable=True),
@@ -797,8 +797,20 @@ def set_root_style(selected_space_id):
 )
 def update_space_select_title(spaces):
     if not spaces:
-        return [html.Span(className="spinner", style={"marginRight": "10px"}), "Waiting for Genie Spaces to load..."]
+        return [html.Span(className="space-select-spinner"), "Loading Genie Spaces..."]
     return "Select a Genie Space"
+
+@app.callback(
+    Output("query-tooltip", "className"),
+    Input("query-running-store", "data"),
+    prevent_initial_call=False
+)
+def update_query_tooltip_class(query_running):
+    # Only show tooltip if query is running
+    if query_running:
+        return "query-tooltip query-tooltip-active"
+    else:
+        return "query-tooltip"
 
 if __name__ == "__main__":
     app.run_server(debug=True)
