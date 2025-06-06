@@ -10,3 +10,5 @@ resource_specs:
 user_api_scopes:
   - serving.serving-endpoints
   - dashboards.genie
+  - files.files
+  - sql
