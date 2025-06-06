@@ -465,18 +465,6 @@ def get_model_response(trigger_data, current_messages, chat_history, selected_sp
             ], className="model-info"),
             html.Div([
                 content,
-                html.Div([
-                    html.Div([
-                        html.Button(
-                            id={"type": "thumbs-up-button", "index": len(chat_history)},
-                            className="thumbs-up-button"
-                        ),
-                        html.Button(
-                            id={"type": "thumbs-down-button", "index": len(chat_history)},
-                            className="thumbs-down-button"
-                        )
-                    ], className="message-actions")
-                ], className="message-footer")
             ], className="message-content")
         ], className="bot-message message")
         
@@ -644,34 +632,6 @@ def toggle_input_disabled(query_running):
     # Disable input and buttons when query is running
     return query_running, query_running, query_running, query_running, tooltip_class
 
-
-# Fix the callback for thumbs up/down buttons
-@app.callback(
-    [Output({"type": "thumbs-up-button", "index": MATCH}, "className"),
-     Output({"type": "thumbs-down-button", "index": MATCH}, "className")],
-    [Input({"type": "thumbs-up-button", "index": MATCH}, "n_clicks"),
-     Input({"type": "thumbs-down-button", "index": MATCH}, "n_clicks")],
-    [State({"type": "thumbs-up-button", "index": MATCH}, "className"),
-     State({"type": "thumbs-down-button", "index": MATCH}, "className")],
-    prevent_initial_call=True
-)
-def handle_feedback(up_clicks, down_clicks, up_class, down_class):
-    ctx = callback_context
-    if not ctx.triggered:
-        return dash.no_update, dash.no_update
-    
-    trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
-    button_type = json.loads(trigger_id)["type"]
-    
-    if button_type == "thumbs-up-button":
-        new_up_class = "thumbs-up-button active" if "active" not in up_class else "thumbs-up-button"
-        new_down_class = "thumbs-down-button"
-    else:
-        new_up_class = "thumbs-up-button"
-        new_down_class = "thumbs-down-button active" if "active" not in down_class else "thumbs-down-button"
-    
-    return new_up_class, new_down_class
-
 # Add callback for toggling SQL query visibility
 @app.callback(
     [Output({"type": "query-code", "index": MATCH}, "className"),
@@ -750,7 +710,7 @@ def update_space_dropdown(spaces):
 
 # Handle space selection
 @app.callback(
-    [Output("selected-space-id", "data"),
+    [Output("selected-space-id", "data", allow_duplicate=True),
      Output("space-select-container", "style"),
      Output("main-content", "style"),
      Output("space-select-error", "children"),
@@ -816,6 +776,16 @@ def hide_input_on_space_select(selected_space_id):
         return {"display": "flex"}
     else:
         return {"display": "none"}
+
+@app.callback(
+    Output("selected-space-id", "data", allow_duplicate=True),
+    Input("logout-button", "n_clicks"),
+    prevent_initial_call=True
+)
+def logout_and_clear_space(n_clicks):
+    if n_clicks:
+        return None
+    return dash.no_update
 
 if __name__ == "__main__":
     app.run_server(debug=True)
