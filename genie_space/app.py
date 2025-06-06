@@ -7,9 +7,16 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 import sqlparse
+from flask import request
+import logging
+
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
 load_dotenv()
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Create Dash app
 app = dash.Dash(
@@ -414,6 +421,7 @@ def handle_all_inputs(s1_clicks, s2_clicks, s3_clicks, s4_clicks, send_clicks, s
     prevent_initial_call=True
 )
 def get_model_response(trigger_data, current_messages, chat_history):
+    logger.info(f"get_model_response called with trigger_data={trigger_data}, current_messages={current_messages}, chat_history={chat_history}")
     if not trigger_data or not trigger_data.get("trigger"):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
     
@@ -422,7 +430,9 @@ def get_model_response(trigger_data, current_messages, chat_history):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
     
     try:
-        response, query_text = genie_query(user_input)
+        headers = request.headers
+        user_token = headers.get('X-Forwarded-Access-Token')
+        response, query_text = genie_query(user_input, user_token)
         
         if isinstance(response, str):
             content = dcc.Markdown(response, className="message-text")
