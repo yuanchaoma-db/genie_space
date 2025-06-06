@@ -39,7 +39,7 @@ app.layout = html.Div([
         # Space selection overlay
         html.Div([
             html.Div([
-                html.H2("Select a Genie Space", className="space-select-title"),
+                html.Div("Loading Genie Spaces...", id="space-select-title", className="space-select-title"),
                 dcc.Dropdown(id="space-dropdown", options=[], placeholder="Choose a Genie Space", className="space-select-dropdown", optionHeight=60, searchable=True),
                 html.Button("Select", id="select-space-button", className="space-select-button"),
                 html.Div(id="space-select-error", className="space-select-error")
@@ -355,8 +355,8 @@ def get_model_response(trigger_data, current_messages, chat_history, selected_sp
     
     try:
         headers = request.headers
-        user_token = os.environ.get("DATABRICKS_TOKEN")
-        # user_token = headers.get('X-Forwarded-Access-Token')
+        # user_token = os.environ.get("DATABRICKS_TOKEN")
+        user_token = headers.get('X-Forwarded-Access-Token')
         response, query_text = genie_query(user_input, user_token, selected_space_id)
         
         if isinstance(response, str):
@@ -679,8 +679,8 @@ def generate_insights(n_clicks, btn_id, chat_history):
 def fetch_spaces(_):
     try:
         headers = request.headers
-        token = os.environ.get("DATABRICKS_TOKEN")
-        # token = headers.get('X-Forwarded-Access-Token')
+        # token = os.environ.get("DATABRICKS_TOKEN")
+        token = headers.get('X-Forwarded-Access-Token')
         host = os.environ.get("DATABRICKS_HOST")
         client = GenieClient(host=host, space_id="", token=token)
         spaces = client.list_spaces()
@@ -785,6 +785,17 @@ def set_root_style(selected_space_id):
         return {"height": "auto", "overflow": "auto"}
     else:
         return {"height": "100vh", "overflow": "hidden"}
+
+# Add a callback to update the title based on spaces-list
+@app.callback(
+    Output("space-select-title", "children"),
+    Input("spaces-list", "data"),
+    prevent_initial_call=False
+)
+def update_space_select_title(spaces):
+    if not spaces:
+        return "Waiting for Genie Spaces to load..."
+    return "Select a Genie Space"
 
 if __name__ == "__main__":
     app.run_server(debug=True)
