@@ -767,18 +767,6 @@ app.clientside_callback(
     prevent_initial_call=True
 )
 
-# Add a callback to control the visibility of the input dialog box at the bottom
-@app.callback(
-    Output("fixed-input-wrapper", "style"),
-    Input("selected-space-id", "data"),
-    prevent_initial_call=False
-)
-def hide_input_on_space_select(selected_space_id):
-    if selected_space_id:
-        return {"display": "flex"}
-    else:
-        return {"display": "none"}
-
 @app.callback(
     Output("selected-space-id", "data", allow_duplicate=True),
     Input("logout-button", "n_clicks"),
@@ -788,17 +776,6 @@ def logout_and_clear_space(n_clicks):
     if n_clicks:
         return None
     return dash.no_update
-
-@app.callback(
-    Output("welcome-container", "className"),
-    Input("selected-space-id", "data"),
-    prevent_initial_call=False
-)
-def toggle_welcome_container(selected_space_id):
-    if selected_space_id:
-        return "welcome-container visible"
-    else:
-        return "welcome-container hidden"
 
 # Add a callback to control the root-container style to prevent scrolling when overlay is visible
 @app.callback(
