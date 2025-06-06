@@ -11,6 +11,7 @@ from flask import request
 import logging
 from genie_room import GenieClient
 import os
+import uuid
 
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
@@ -366,9 +367,10 @@ def get_model_response(trigger_data, current_messages, chat_history, selected_sp
             
             # Store the DataFrame in chat_history for later retrieval by insight button
             if chat_history and len(chat_history) > 0:
-                chat_history[0].setdefault('dataframes', {})[f"table-{len(chat_history)}"] = df.to_json(orient='split')
+                table_uuid = str(uuid.uuid4())
+                chat_history[0].setdefault('dataframes', {})[table_uuid] = df.to_json(orient='split')
             else:
-                chat_history = [{"dataframes": {f"table-{len(chat_history)}": df.to_json(orient='split')}}]
+                chat_history = [{"dataframes": {table_uuid: df.to_json(orient='split')}}]
             
             # Create the table with adjusted styles
             data_table = dash_table.DataTable(
@@ -437,15 +439,15 @@ def get_model_response(trigger_data, current_messages, chat_history, selected_sp
             
             insight_button = html.Button(
                 "Generate Insights",
-                id={"type": "insight-button", "index": f"table-{len(chat_history)}"},
+                id={"type": "insight-button", "index": table_uuid},
                 className="insight-button",
                 style={"border": "none", "background": "#f0f0f0", "padding": "8px 16px", "borderRadius": "4px", "cursor": "pointer"}
             )
             insight_output = dcc.Loading(
-                id={"type": "insight-loading", "index": f"table-{len(chat_history)}"},
+                id={"type": "insight-loading", "index": table_uuid},
                 type="circle",
                 color="#000000",
-                children=html.Div(id={"type": "insight-output", "index": f"table-{len(chat_history)}"})
+                children=html.Div(id={"type": "insight-output", "index": table_uuid})
             )
 
             # Create content with table and optional SQL section
@@ -656,16 +658,15 @@ def toggle_query_visibility(n_clicks):
 )
 def generate_insights(n_clicks, btn_id, chat_history):
     if not n_clicks:
-        return None  # Don't show anything before click
+        return None
     table_id = btn_id["index"]
-    # Retrieve the DataFrame from chat_history
     df = None
     if chat_history and len(chat_history) > 0:
         df_json = chat_history[0].get('dataframes', {}).get(table_id)
         if df_json:
             df = pd.read_json(df_json, orient='split')
     if df is None:
-        return None
+        return html.Div("No data available for insights.", style={"color": "red"})
     insights = call_llm_for_insights(df)
     return html.Div(
         dcc.Markdown(insights),
