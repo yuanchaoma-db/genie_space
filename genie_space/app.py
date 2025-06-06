@@ -355,6 +355,7 @@ def get_model_response(trigger_data, current_messages, chat_history, selected_sp
     
     try:
         headers = request.headers
+        # user_token = os.environ.get("DATABRICKS_TOKEN")
         user_token = headers.get('X-Forwarded-Access-Token')
         response, query_text = genie_query(user_input, user_token, selected_space_id)
         
@@ -682,6 +683,7 @@ def generate_insights(n_clicks, btn_id, chat_history):
 def fetch_spaces(_):
     try:
         headers = request.headers
+        # token = os.environ.get("DATABRICKS_TOKEN")
         token = headers.get('X-Forwarded-Access-Token')
         host = os.environ.get("DATABRICKS_HOST")
         client = GenieClient(host=host, space_id="", token=token)
