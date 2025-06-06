@@ -15,6 +15,7 @@ import uuid
 
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
+from databricks.sdk.config import Config
 load_dotenv()
 
 # Configure logging
@@ -213,7 +214,18 @@ def call_llm_for_insights(df, prompt=None):
     full_prompt = f"{prompt}Table data:\n{csv_data}"
     # Call OpenAI (replace with your own LLM provider as needed)
     try:
-        client = WorkspaceClient()
+        headers = request.headers
+        user_token = headers.get('X-Forwarded-Access-Token')
+        config = Config(
+            host=f"https://{os.environ.get('DATABRICKS_HOST')}",
+            token=user_token,
+            auth_type="pat",  # Explicitly set authentication type to PAT
+            retry_timeout_seconds=300,  # 5 minutes total retry timeout
+            max_retries=5,              # Maximum number of retries
+            retry_delay_seconds=2,      # Initial delay between retries
+            retry_backoff_factor=2      # Exponential backoff factor
+        )
+        client = WorkspaceClient(config=config)
         response = client.serving_endpoints.query(
             os.getenv("SERVING_ENDPOINT_NAME"),
             messages=[ChatMessage(content=full_prompt, role=ChatMessageRole.USER)],
