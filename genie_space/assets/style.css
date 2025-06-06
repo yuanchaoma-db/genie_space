@@ -885,9 +885,9 @@ body::-webkit-scrollbar {
     align-items: flex-start;
 }
 
-/* Tooltip for query lock: only show on hover of disabled input or send button */
-.fixed-input-container:hover > #query-tooltip,
-.fixed-input-container:focus-within > #query-tooltip {
+/* Only show tooltip when .query-tooltip-active is present and input is hovered/focused */
+.fixed-input-container:hover > .query-tooltip.query-tooltip-active,
+.fixed-input-container:focus-within > .query-tooltip.query-tooltip-active {
     opacity: 1;
     visibility: visible;
 }
@@ -1401,7 +1401,7 @@ input:disabled, button:disabled {
     text-align: center;
 }
 
-.spinner {
+.space-select-spinner {
     display: inline-block;
     width: 24px;
     height: 24px;
@@ -1410,7 +1410,7 @@ input:disabled, button:disabled {
     border-right: 2px solid #111212;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-right: 16px;
+    margin-right: 18px;
 }
 
 @keyframes spin {
