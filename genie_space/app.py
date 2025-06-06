@@ -30,17 +30,9 @@ app = dash.Dash(
 DEFAULT_WELCOME_TITLE = "Welcome to Your Data Assistant"
 DEFAULT_WELCOME_DESCRIPTION = "Explore and analyze your data with AI-powered insights. Ask questions, discover trends, and make data-driven decisions."
 
-# Add default suggestion questions
-DEFAULT_SUGGESTIONS = [
-    "What tables are there and how are they connected? Give me a short summary.",
-    "Describe the relationships between the tables.",
-    "Explain the dataset",
-    "What columns or fields are available in this dataset?"
-]
-
 # Define the layout
 app.layout = html.Div([
-    dcc.Store(id="selected-space-id", data=None),
+    dcc.Store(id="selected-space-id", data=None, storage_type="local"),
     dcc.Store(id="spaces-list", data=[]),
     # Space selection overlay
     html.Div([
@@ -110,96 +102,11 @@ app.layout = html.Div([
                     # Add settings button with tooltip
                     html.Div([
                         html.Div(id="welcome-title", className="welcome-message", children=DEFAULT_WELCOME_TITLE),
-                        html.Button([
-                            html.Img(src="assets/settings_icon.svg", className="settings-icon"),
-                            html.Div("Customize welcome message", className="button-tooltip")
-                        ],
-                        id="edit-welcome-button",
-                        className="edit-welcome-button",
-                        title="Customize welcome message")
                     ], className="welcome-title-container"),
                     
                     html.Div(id="welcome-description", 
                             className="welcome-message-description",
                             children=DEFAULT_WELCOME_DESCRIPTION),
-                    
-                    # Add modal for editing welcome text
-                    dbc.Modal([
-                        dbc.ModalHeader(dbc.ModalTitle("Customize Welcome Message")),
-                        dbc.ModalBody([
-                            html.Div([
-                                html.Label("Welcome Title", className="modal-label"),
-                                dbc.Input(
-                                    id="welcome-title-input",
-                                    type="text",
-                                    placeholder="Enter a title for your welcome message",
-                                    className="modal-input"
-                                ),
-                                html.Small(
-                                    "This title appears at the top of your welcome screen",
-                                    className="text-muted d-block mt-1"
-                                )
-                            ], className="modal-input-group"),
-                            html.Div([
-                                html.Label("Welcome Description", className="modal-label"),
-                                dbc.Textarea(
-                                    id="welcome-description-input",
-                                    placeholder="Enter a description that helps users understand the purpose of your application",
-                                    className="modal-input",
-                                    style={"height": "80px"}
-                                ),
-                                html.Small(
-                                    "This description appears below the title and helps guide your users",
-                                    className="text-muted d-block mt-1"
-                                )
-                            ], className="modal-input-group"),
-                            html.Div([
-                                html.Label("Suggestion Questions", className="modal-label"),
-                                html.Small(
-                                    "Customize the four suggestion questions that appear on the welcome screen",
-                                    className="text-muted d-block mb-3"
-                                ),
-                                dbc.Input(
-                                    id="suggestion-1-input",
-                                    type="text",
-                                    placeholder="First suggestion question",
-                                    className="modal-input mb-2"
-                                ),
-                                dbc.Input(
-                                    id="suggestion-2-input",
-                                    type="text",
-                                    placeholder="Second suggestion question",
-                                    className="modal-input mb-2"
-                                ),
-                                dbc.Input(
-                                    id="suggestion-3-input",
-                                    type="text",
-                                    placeholder="Third suggestion question",
-                                    className="modal-input mb-2"
-                                ),
-                                dbc.Input(
-                                    id="suggestion-4-input",
-                                    type="text",
-                                    placeholder="Fourth suggestion question",
-                                    className="modal-input"
-                                )
-                            ], className="modal-input-group")
-                        ]),
-                        dbc.ModalFooter([
-                            dbc.Button(
-                                "Cancel",
-                                id="close-modal",
-                                className="modal-button",
-                                color="light"
-                            ),
-                            dbc.Button(
-                                "Save Changes",
-                                id="save-welcome-text",
-                                className="modal-button-primary",
-                                color="primary"
-                            )
-                        ])
-                    ], id="edit-welcome-modal", is_open=False, size="lg", backdrop="static"),
                     
                     # Suggestion buttons with IDs
                     html.Div([
@@ -210,17 +117,17 @@ app.layout = html.Div([
                         ], id="suggestion-1", className="suggestion-button"),
                         html.Button([
                             html.Div(className="suggestion-icon"),
-                            html.Div("Which distribution center has the highest chance of being a bottleneck?",
+                            html.Div("Describe the relationships between the tables.",
                                    className="suggestion-text", id="suggestion-2-text")
                         ], id="suggestion-2", className="suggestion-button"),
                         html.Button([
                             html.Div(className="suggestion-icon"),
-                            html.Div("Explain the dataset",
+                            html.Div("Explain the dataset.",
                                    className="suggestion-text", id="suggestion-3-text")
                         ], id="suggestion-3", className="suggestion-button"),
                         html.Button([
                             html.Div(className="suggestion-icon"),
-                            html.Div("What was the demand for our products by week in 2024?",
+                            html.Div("What columns or fields are available in this dataset?",
                                    className="suggestion-text", id="suggestion-4-text")
                         ], id="suggestion-4", className="suggestion-button")
                     ], className="suggestion-buttons")
@@ -263,33 +170,6 @@ app.layout = html.Div([
     dcc.Store(id="session-store", data={"current_session": None}),
     html.Div(id='dummy-insight-scroll')
 ])
-
-# Add modal for entering suggested questions after space selection
-app.layout.children.insert(2, dbc.Modal([
-    dbc.ModalHeader(dbc.ModalTitle("Enter Suggested Questions")),
-    dbc.ModalBody([
-        html.Div([
-            html.Label("Suggestion 1", className="modal-label"),
-            dbc.Input(id="suggestion-modal-1", type="text", placeholder="First suggestion question", className="modal-input mb-2"),
-        ]),
-        html.Div([
-            html.Label("Suggestion 2", className="modal-label"),
-            dbc.Input(id="suggestion-modal-2", type="text", placeholder="Second suggestion question", className="modal-input mb-2"),
-        ]),
-        html.Div([
-            html.Label("Suggestion 3", className="modal-label"),
-            dbc.Input(id="suggestion-modal-3", type="text", placeholder="Third suggestion question", className="modal-input mb-2"),
-        ]),
-        html.Div([
-            html.Label("Suggestion 4", className="modal-label"),
-            dbc.Input(id="suggestion-modal-4", type="text", placeholder="Fourth suggestion question", className="modal-input"),
-        ]),
-    ]),
-    dbc.ModalFooter([
-        dbc.Button("Skip", id="skip-suggestions-modal", className="modal-button", color="light"),
-        dbc.Button("Submit", id="submit-suggestions-modal", className="modal-button-primary", color="primary")
-    ])
-], id="suggestions-modal", is_open=False, size="lg", backdrop="static"))
 
 # Store chat history
 chat_history = []
@@ -804,80 +684,6 @@ def toggle_query_visibility(n_clicks):
         return "query-code-container visible", "Hide code"
     return "query-code-container hidden", "Show code"
 
-# Add callbacks for welcome text customization
-@app.callback(
-    [Output("edit-welcome-modal", "is_open", allow_duplicate=True),
-     Output("welcome-title-input", "value"),
-     Output("welcome-description-input", "value"),
-     Output("suggestion-1-input", "value"),
-     Output("suggestion-2-input", "value"),
-     Output("suggestion-3-input", "value"),
-     Output("suggestion-4-input", "value")],
-    [Input("edit-welcome-button", "n_clicks")],
-    [State("welcome-title", "children"),
-     State("welcome-description", "children"),
-     State("suggestion-1-text", "children"),
-     State("suggestion-2-text", "children"),
-     State("suggestion-3-text", "children"),
-     State("suggestion-4-text", "children")],
-    prevent_initial_call=True
-)
-def open_modal(n_clicks, current_title, current_description, s1, s2, s3, s4):
-    if not n_clicks:
-        return [no_update] * 7
-    return True, current_title, current_description, s1, s2, s3, s4
-
-@app.callback(
-    [Output("welcome-title", "children", allow_duplicate=True),
-     Output("welcome-description", "children", allow_duplicate=True),
-     Output("suggestion-1-text", "children", allow_duplicate=True),
-     Output("suggestion-2-text", "children", allow_duplicate=True),
-     Output("suggestion-3-text", "children", allow_duplicate=True),
-     Output("suggestion-4-text", "children", allow_duplicate=True),
-     Output("edit-welcome-modal", "is_open", allow_duplicate=True)],
-    [Input("save-welcome-text", "n_clicks"),
-     Input("close-modal", "n_clicks")],
-    [State("welcome-title-input", "value"),
-     State("welcome-description-input", "value"),
-     State("suggestion-1-input", "value"),
-     State("suggestion-2-input", "value"),
-     State("suggestion-3-input", "value"),
-     State("suggestion-4-input", "value"),
-     State("welcome-title", "children"),
-     State("welcome-description", "children"),
-     State("suggestion-1-text", "children"),
-     State("suggestion-2-text", "children"),
-     State("suggestion-3-text", "children"),
-     State("suggestion-4-text", "children")],
-    prevent_initial_call=True
-)
-def handle_modal_actions(save_clicks, close_clicks,
-                        new_title, new_description, s1, s2, s3, s4,
-                        current_title, current_description,
-                        current_s1, current_s2, current_s3, current_s4):
-    ctx = callback_context
-    if not ctx.triggered:
-        return [no_update] * 7
-
-    trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
-
-    if trigger_id == "close-modal":
-        return [current_title, current_description, 
-                current_s1, current_s2, current_s3, current_s4, False]
-    elif trigger_id == "save-welcome-text":
-        # Save the changes
-        title = new_title if new_title else DEFAULT_WELCOME_TITLE
-        description = new_description if new_description else DEFAULT_WELCOME_DESCRIPTION
-        suggestions = [
-            s1 if s1 else DEFAULT_SUGGESTIONS[0],
-            s2 if s2 else DEFAULT_SUGGESTIONS[1],
-            s3 if s3 else DEFAULT_SUGGESTIONS[2],
-            s4 if s4 else DEFAULT_SUGGESTIONS[3]
-        ]
-        return [title, description, *suggestions, False]
-
-    return [no_update] * 7
-
 # Add callback for insight button
 @app.callback(
     Output({"type": "insight-output", "index": dash.dependencies.MATCH}, "children"),
@@ -978,49 +784,6 @@ def toggle_main_ui(selected_space_id):
     else:
         return {"display": "none"}, {"display": "flex", "flexDirection": "column", "alignItems": "center", "justifyContent": "center", "height": "100vh"}
 
-# Open the suggestions modal after space selection
-@app.callback(
-    Output("suggestions-modal", "is_open"),
-    Input("selected-space-id", "data"),
-    State("suggestions-modal", "is_open"),
-    prevent_initial_call=True
-)
-def open_suggestions_modal(selected_space_id, is_open):
-    if selected_space_id and not is_open:
-        return True
-    return dash.no_update
-
-# Handle submit/skip for suggestions modal
-@app.callback(
-    [Output("suggestion-1-text", "children", allow_duplicate=True),
-     Output("suggestion-2-text", "children", allow_duplicate=True),
-     Output("suggestion-3-text", "children", allow_duplicate=True),
-     Output("suggestion-4-text", "children", allow_duplicate=True),
-     Output("suggestions-modal", "is_open", allow_duplicate=True)],
-    [Input("submit-suggestions-modal", "n_clicks"),
-     Input("skip-suggestions-modal", "n_clicks")],
-    [State("suggestion-modal-1", "value"),
-     State("suggestion-modal-2", "value"),
-     State("suggestion-modal-3", "value"),
-     State("suggestion-modal-4", "value")],
-    prevent_initial_call=True
-)
-def handle_suggestions_modal(submit, skip, s1, s2, s3, s4):
-    ctx = callback_context
-    if not ctx.triggered:
-        return [dash.no_update] * 5
-    trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
-    if trigger_id == "skip-suggestions-modal":
-        return DEFAULT_SUGGESTIONS + [False]
-    # On submit, use entered values or defaults
-    suggestions = [
-        s1 if s1 else DEFAULT_SUGGESTIONS[0],
-        s2 if s2 else DEFAULT_SUGGESTIONS[1],
-        s3 if s3 else DEFAULT_SUGGESTIONS[2],
-        s4 if s4 else DEFAULT_SUGGESTIONS[3],
-    ]
-    return suggestions + [False]
-
 # Add clientside callback for scrolling to bottom of chat when insight is generated
 app.clientside_callback(
     """
@@ -1041,6 +804,18 @@ app.clientside_callback(
     Input({'type': 'insight-output', 'index': dash.dependencies.ALL}, 'children'),
     prevent_initial_call=True
 )
+
+# Add a callback to control the visibility of the input dialog box at the bottom
+@app.callback(
+    Output("fixed-input-wrapper", "style"),
+    Input("selected-space-id", "data"),
+    prevent_initial_call=False
+)
+def hide_input_on_space_select(selected_space_id):
+    if selected_space_id:
+        return {"display": "flex"}
+    else:
+        return {"display": "none"}
 
 if __name__ == "__main__":
     app.run_server(debug=True)
