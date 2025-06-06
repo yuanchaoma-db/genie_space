@@ -39,7 +39,7 @@ app.layout = html.Div([
         # Space selection overlay
         html.Div([
             html.Div([
-                html.H2("Select a Genie Space", className="space-select-title"),
+                html.Div("Loading Genie Spaces...", id="space-select-title", className="space-select-title"),
                 dcc.Dropdown(id="space-dropdown", options=[], placeholder="Choose a Genie Space", className="space-select-dropdown", optionHeight=60, searchable=True),
                 html.Button("Select", id="select-space-button", className="space-select-button"),
                 html.Div(id="space-select-error", className="space-select-error")
@@ -158,7 +158,7 @@ app.layout = html.Div([
                         ], className="input-buttons-right"),
                         html.Div("You can only submit one query at a time", 
                                 id="query-tooltip", 
-                                className="query-tooltip hidden")
+                                className="query-tooltip")
                     ], id="fixed-input-container", className="fixed-input-container"),
                     html.Div("Always review the accuracy of responses.", className="disclaimer-fixed")
                 ], id="fixed-input-wrapper", className="fixed-input-wrapper"),
@@ -624,17 +624,13 @@ def reset_query_running(chat_messages):
     [Output("chat-input-fixed", "disabled"),
      Output("send-button-fixed", "disabled"),
      Output("new-chat-button", "disabled"),
-     Output("sidebar-new-chat-button", "disabled"),
-     Output("query-tooltip", "className")],
+     Output("sidebar-new-chat-button", "disabled")],
     [Input("query-running-store", "data")],
     prevent_initial_call=True
 )
 def toggle_input_disabled(query_running):
-    # Show tooltip when query is running, hide it otherwise
-    tooltip_class = "query-tooltip visible" if query_running else "query-tooltip hidden"
-    
     # Disable input and buttons when query is running
-    return query_running, query_running, query_running, query_running, tooltip_class
+    return query_running, query_running, query_running, query_running
 
 # Add callback for toggling SQL query visibility
 @app.callback(
@@ -789,6 +785,17 @@ def set_root_style(selected_space_id):
         return {"height": "auto", "overflow": "auto"}
     else:
         return {"height": "100vh", "overflow": "hidden"}
+
+# Add a callback to update the title based on spaces-list
+@app.callback(
+    Output("space-select-title", "children"),
+    Input("spaces-list", "data"),
+    prevent_initial_call=False
+)
+def update_space_select_title(spaces):
+    if not spaces:
+        return "Waiting for Genie Spaces to load..."
+    return "Select a Genie Space"
 
 if __name__ == "__main__":
     app.run_server(debug=True)
