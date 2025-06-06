@@ -46,7 +46,7 @@ app.layout = html.Div([
     html.Div([
         html.Div([
             html.H2("Select a Genie Space", className="space-select-title"),
-            dcc.Dropdown(id="space-dropdown", options=[], placeholder="Choose a Genie Space", className="space-select-dropdown"),
+            dcc.Dropdown(id="space-dropdown", options=[], placeholder="Choose a Genie Space", className="space-select-dropdown", optionHeight=60, searchable=True),
             html.Button("Select", id="select-space-button", className="space-select-button"),
             html.Div(id="space-select-error", className="space-select-error")
         ], className="space-select-card")
@@ -472,7 +472,8 @@ def get_model_response(trigger_data, current_messages, chat_history, selected_sp
     
     try:
         headers = request.headers
-        user_token = headers.get('X-Forwarded-Access-Token')
+        user_token = os.environ.get("DATABRICKS_TOKEN")
+        # user_token = headers.get('X-Forwarded-Access-Token')
         response, query_text = genie_query(user_input, user_token, selected_space_id)
         
         if isinstance(response, str):
@@ -913,7 +914,8 @@ def generate_insights(n_clicks, btn_id, chat_history):
 def fetch_spaces(_):
     try:
         headers = request.headers
-        token = headers.get('X-Forwarded-Access-Token')
+        token = os.environ.get("DATABRICKS_TOKEN")
+        # token = headers.get('X-Forwarded-Access-Token')
         host = os.environ.get("DATABRICKS_HOST")
         client = GenieClient(host=host, space_id="", token=token)
         spaces = client.list_spaces()
@@ -930,7 +932,15 @@ def fetch_spaces(_):
 def update_space_dropdown(spaces):
     if not spaces:
         return []
-    return [{"label": f"{s['title']} ({s['space_id']})", "value": s["space_id"]} for s in spaces]
+    options = []
+    for s in spaces:
+        title = s.get('title', '')
+        space_id = s.get('space_id', '')
+        label_lines = [title]
+        label_lines.append(space_id)
+        label = " | ".join(label_lines)  # or use '\\n'.join(label_lines) for multi-line (but most browsers will show as a single line)
+        options.append({"label": label, "value": space_id})
+    return options
 
 # Handle space selection
 @app.callback(

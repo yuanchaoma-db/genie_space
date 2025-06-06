@@ -24,7 +24,7 @@ class GenieClient:
         # Configure SDK with retry settings and explicit PAT auth
         config = Config(
             host=f"https://{host}",
-            token=os.environ.get("DATABRICKS_TOKEN"),
+            token=token,
             auth_type="pat",  # Explicitly set authentication type to PAT
             retry_timeout_seconds=300,  # 5 minutes total retry timeout
             max_retries=5,              # Maximum number of retries
@@ -115,24 +115,23 @@ class GenieClient:
     def list_spaces(self) -> list:
         """List all Genie spaces available to the user."""
         # can we mock some response here?
-        response = [
-            {
-                "space_id": "01f03bcefff614e6a6de93a688fa37d8",
-                "title": "Genie Space 1",
-                "description": "This is the first Genie space"
-            },
-            {
-                "space_id": "456",
-                "title": "Genie Space 2",
-                "description": "This is the second Genie space"
-            }
-        ]
-        
-        #response = self.client.genie.list_spaces()
-
-        # response.spaces is a list of GenieSpace objects
-        #return [space.as_dict() for space in (response.spaces or [])]
-        return response
+        # response = [
+        #     {
+        #         "space_id": "01f03bcefff614e6a6de93a688fa37d8",
+        #         "title": "Genie Space 1",
+        #         "description": "This is the first Genie space"
+        #     },
+        #     {
+        #         "space_id": "456",
+        #         "title": "Genie Space 2",
+        #         "description": "This is the second Genie space"
+        #     }
+        # ]
+        response = self.client.genie.list_spaces()
+        if hasattr(response, 'spaces'):
+            return [space.as_dict() for space in (response.spaces or [])]
+        else:
+            return []
 
 def start_new_conversation(question: str, token: str, space_id: str) -> Tuple[str, Union[str, pd.DataFrame], Optional[str]]:
     """

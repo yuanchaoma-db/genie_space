@@ -472,6 +472,7 @@ body {
     scroll-behavior: smooth;
     -ms-overflow-style: none;  
     max-height: calc(100vh - 48px - 90px - 20px);
+    padding-bottom: 100px;
 }
 
 .chat-messages::-webkit-scrollbar {
@@ -1364,14 +1365,11 @@ input:disabled, button:disabled {
 }
 
 .space-select-dropdown {
-    width: 320px;
-    margin-bottom: 12px;
-    border-radius: 8px;
-    border: 1px solid #C0CDD8;
+    width: 480px;         /* wider than before */
+    min-width: 400px;
+    max-width: 600px;
     font-size: 15px;
-    padding: 0px 0px;
-    background: #f5f7fa;
-    transition: border-color 0.2s;
+    padding: 8px 12px;
 }
 .space-select-dropdown:focus {
     border-color: #4299E0;
